@@ -14,7 +14,7 @@
 		SetScale( Scale );
 		SetDirection(NULL);
 		SetStatus(Alive);
-		m_NumberOfLives = 3;
+		m_NumberOfLives = 8;
 		m_HasShot = false;
 	}
 

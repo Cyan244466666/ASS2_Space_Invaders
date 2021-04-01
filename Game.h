@@ -19,38 +19,36 @@ private:
 	Vector2 updatePlayerPos{ 512, 650 };
 	// This vector will hold all Aliens that'll be spawned into the game:
 	std::vector <Alien*> alienVector;
+	// This vector holds all UFO aliens spawned in-game:
+	std::vector <Alien*> UFOVector;
 	// This vector holds all bullets spawned in-game:
 	std::vector <Bullet*> bulletVector;
 	// This vector hold all alien bullets spawned in-game:
 	std::vector <Bullet*> alienBulletVector;
 	// These are time counters used to time the execution of some code (e.g. alien movement and shooting bullets):
-	float movementTimer = 0;
-	float shootingDelay = 0;
-	float alienShootingDelay = 0;
+	float movementTimer = 0.0f;
+	float shootingDelay = 0.0f;
+	float alienShootingDelay = 0.0f;
+	bool activateRespawnTimer = false;
+	float respawnTimer = 0.0f;
+	float UFOTimer = 0.0f;
+
 	// This bool is used to tell the program that the alien has already moved down a row and doesn't
 	// need to do it again:
 	bool touchWall;
+	// Dictates alien movement speed:
+	float movementSpeed = 0.0f;
+	// Dictates firing speed of aliens:
+	float firingSpeed = 3.0f;
 	// Variables to hold the alien sprited:
 	SDL_Texture* squidImage;
 	SDL_Texture* crabImage;
 	SDL_Texture* octopusImage;
+	SDL_Texture* UFOImage;
 	// Variable to hold player bullet sprite:
 	SDL_Texture* playerBulletImage;
 
-	// Columns of aliens:
-	std::vector<Alien*> column0;
-	std::vector<Alien*> column1;
-	std::vector<Alien*> column2;
-	std::vector<Alien*> column3;
-	std::vector<Alien*> column4;
-	std::vector<Alien*> column5;
-	std::vector<Alien*> column6;
-	std::vector<Alien*> column7;
-	std::vector<Alien*> column8;
-	std::vector<Alien*> column9;
-	std::vector<Alien*> column10;
 
-	std::vector < std::vector<Alien*>> allColumns;
 
 
 	// Barriers:
