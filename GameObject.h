@@ -7,8 +7,10 @@
 enum Status
 {
 	Alive,
+	JustKilled,
 	Dead
 };
+
 
 //This struct will serve as a Vector2:
 struct Vector2

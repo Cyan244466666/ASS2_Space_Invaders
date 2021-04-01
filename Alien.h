@@ -3,9 +3,15 @@
 #include "GameObject.h"
 #include "Game.h"
 
+
+enum alienType
+{
+	Squid,
+	Crab,
+	Octopus
+};
 // This class contains an individual alien. This includes 
 // the UFO:
-
 class Alien : public GameObject
 {
 private:
@@ -17,6 +23,10 @@ private:
 	int m_Index;
 	int m_Column;
 	bool m_InFront;
+
+	//Holds what type the alien is:
+	alienType m_Type;
+
 public:
 	// Constructor:
 	Alien() 
@@ -31,6 +41,7 @@ public:
 		m_Index = NULL;
 		m_Column = NULL;
 		m_InFront = false;
+		m_Type = Squid;
 	}
 	// Destructor:
 	~Alien() override = default;
@@ -41,6 +52,7 @@ public:
 	int GetIndex() { return m_Index; }
 	int GetColumn() { return m_Column; }
 	bool GetInFront() { return m_InFront; }
+	alienType GetAlienType() { return m_Type; }
 
 	// Setter:
 	void SetPointValue(int pointValue)
@@ -62,6 +74,10 @@ public:
 	void SetInFront(bool inFront)
 	{
 		m_InFront = inFront;
+	}
+	void SetAlienType(alienType _type)
+	{
+		m_Type = _type;
 	}
 
 	// This function takes in a value and moves the alien by that

@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 #include <vector>
 #include "GameObject.h"
 #include "Ship.h"
@@ -33,6 +34,32 @@ private:
 	float respawnTimer = 0.0f;
 	float UFOTimer = 0.0f;
 
+	int musicPlaying1 = 0;
+	int musicPlaying2 = 0;
+
+	// Background Music:
+	Mix_Music* backgroundMusic;
+	
+
+	// SFX:
+	Mix_Chunk* player_shoot;
+	Mix_Chunk* barrier_destroyed;
+	Mix_Chunk* barrier_hit;
+	Mix_Chunk* bullet_collision;
+	Mix_Chunk* crab_death;
+	Mix_Chunk* menu_press;
+	Mix_Chunk* octopus_death;
+	Mix_Chunk* player_death;
+	Mix_Chunk* squid_death;
+	Mix_Chunk* ufo_death;
+	Mix_Chunk* ufo_spawn;
+	Mix_Chunk* wave_complete;
+	Mix_Chunk* alien_move_speed1;
+	Mix_Chunk* alien_move_speed2;
+	Mix_Chunk* alien_move_speed3;
+	Mix_Chunk* alien_move_speed4;
+
+
 	// This bool is used to tell the program that the alien has already moved down a row and doesn't
 	// need to do it again:
 	bool touchWall;
@@ -45,6 +72,8 @@ private:
 	SDL_Texture* crabImage;
 	SDL_Texture* octopusImage;
 	SDL_Texture* UFOImage;
+	SDL_Texture* AlienDeathImage;
+	int deathAnimationCounter = 0;
 	// Variable to hold player bullet sprite:
 	SDL_Texture* playerBulletImage;
 

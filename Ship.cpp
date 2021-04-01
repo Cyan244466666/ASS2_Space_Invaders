@@ -14,7 +14,7 @@
 		SetScale( Scale );
 		SetDirection(NULL);
 		SetStatus(Alive);
-		m_NumberOfLives = 8;
+		m_NumberOfLives = 3;
 		m_HasShot = false;
 	}
 
@@ -24,6 +24,7 @@
 	// Getters:
 	int Ship::GetNumberOfLives() { return m_NumberOfLives; }
 	bool Ship::GetHasShot() { return m_HasShot; }
+	
 
 	// Setters:
 	void Ship::SetNumberOfLives(int _numberOfLives) { m_NumberOfLives = _numberOfLives; }

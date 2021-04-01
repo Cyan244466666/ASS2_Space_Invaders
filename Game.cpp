@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 #include <time.h>
 #include "GameObject.h"
 #include "Game.h"
@@ -30,9 +31,31 @@ Game::Game()
 	crabImage = nullptr;
 	octopusImage = nullptr;
 	UFOImage = nullptr;
+	AlienDeathImage = nullptr;
 	touchWall = false;
 
 	playerBulletImage = nullptr;
+
+	// Music
+	backgroundMusic = nullptr;
+
+	// SFX:
+	barrier_destroyed = nullptr;
+	barrier_hit = nullptr;
+	bullet_collision = nullptr;
+	crab_death = nullptr;
+	menu_press = nullptr;
+	octopus_death = nullptr;
+	player_shoot = nullptr;
+	player_death = nullptr;
+	squid_death = nullptr;
+	ufo_death = nullptr;
+	ufo_spawn = nullptr;
+	wave_complete = nullptr;
+	alien_move_speed1 = nullptr;
+	alien_move_speed2 = nullptr;
+	alien_move_speed3 = nullptr;
+	alien_move_speed4 = nullptr;
 }
 // Destructor
 Game::~Game() {}
@@ -42,15 +65,15 @@ Game::~Game() {}
 // and false otherwise:
 bool Game::Initialise()
 {
-	// Step 1: Initialise SDL - if successful, returns 0, otherwise print error:
-	int sdlResult = SDL_Init(SDL_INIT_VIDEO);
+	/// Step 1: Initialise SDL - if successful, returns 0, otherwise print error:
+	int sdlResult = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	if (sdlResult != 0)
 	{
 		SDL_Log("Unable to initialise SDL: %s", SDL_GetError());
 		return 1;
 	}
 	//------------------------------------------
-	// Step 2: Initialise Window - returns false is unsuccessful.
+	/// Step 2: Initialise Window - returns false is unsuccessful.
 	m_Window = SDL_CreateWindow(
 		"Space Invaders", // Window title
 		100, // x-coordinate
@@ -65,7 +88,7 @@ bool Game::Initialise()
 		return 1;
 	}
 	//------------------------------------------
-	// Step 3: Initialise Renderer - returns false is unsuccessful.
+	/// Step 3: Initialise Renderer - returns false is unsuccessful.
 	m_Renderer = SDL_CreateRenderer(
 		m_Window, // The window attached to the renderer
 		-1, // Index
@@ -78,7 +101,7 @@ bool Game::Initialise()
 	}
 
 	//------------------------------------------
-	// Step 4: 
+	/// Step 4: Initialise SDL_image
 	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
 	{
 		SDL_Log("Unable to initialise IMG: %s", SDL_GetError());
@@ -86,16 +109,52 @@ bool Game::Initialise()
 	}
 
 	// If all initialisation is successful, return true:
+	//------------------------------------------
+	/// Step 5: Initialise SDL mixer:
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
+	backgroundMusic = Mix_LoadMUS("music/invader.mp3");
+	player_shoot = Mix_LoadWAV("sound_effects/player_shoot.wav");
+	barrier_destroyed = Mix_LoadWAV("sound_effects/barrier_destroyed.wav");
+	barrier_hit = Mix_LoadWAV("sound_effects/barrier_hit.wav");
+	bullet_collision = Mix_LoadWAV("sound_effects/bullet_collision.wav");
+	crab_death = Mix_LoadWAV("sound_effects/crab_death.wav");
+	menu_press = Mix_LoadWAV("sound_effects/menu_press.wav");
+	octopus_death = Mix_LoadWAV("sound_effects/octopus_death.wav");
+	player_death = Mix_LoadWAV("sound_effects/player_death.wav");
+	squid_death = Mix_LoadWAV("sound_effects/squid_death.wav");
+	ufo_death = Mix_LoadWAV("sound_effects/ufo_death.wav");
+	ufo_spawn = Mix_LoadWAV("sound_effects/ufo_spawn.wav");
+	wave_complete = Mix_LoadWAV("sound_effects/wave_complete.wav");
+	alien_move_speed1 = Mix_LoadWAV("sound_effects/alien_move1.wav");
+	alien_move_speed2 = Mix_LoadWAV("sound_effects/alien_move2.wav");
+	alien_move_speed3 = Mix_LoadWAV("sound_effects/alien_move3.wav");
+	alien_move_speed4 = Mix_LoadWAV("sound_effects/alien_move4.wav");
 
+
+	
+
+	/// Step 6: Play background music in a loop:
+	
+	// allocate 16 mixing channels
+	Mix_AllocateChannels(16);
+
+	Mix_PlayMusic(backgroundMusic, -1);
+	// Set Volume
+	Mix_VolumeMusic(10);
+	Mix_Volume(-1, 15);
+	Mix_Volume(2, 5);
+	Mix_Volume(4, 30);
+	
+	// Free Music Memory:
+	/*Mix_FreeMusic(backgroundMusic);*/
 
 	//------------------------------------------
-	// Step 5: Initialise the Aliens' start position:
+	/// Step 7: Initialise the Aliens' start position:
 	// First, we set the Position of the space
 	// in which the aliens will spawn:
 	float spaceX = 230;
-	float spaceY = 140;
+	float spaceY = 70;
 
-	
 	// Second, work out where each alien will be
 	// placed within these dimensions:
 	float xPos, yPos;
@@ -109,6 +168,7 @@ bool Game::Initialise()
 		xPos = ((i % 11) * (alienScale.x + 30)) + spaceX;
 		yPos = ((i / 11) * ( alienScale.y + 20 )) + spaceY;
 
+	
 		// Set index and column number:
 		alien->SetIndex(i);
 		alien->SetColumn(i % 11);
@@ -120,6 +180,23 @@ bool Game::Initialise()
 		alien->SetPosition(spawnPosition);
 		alienVector.push_back(alien);
 		Game::GenerateOutput();
+	}
+
+	// Set alien type
+	for (auto* alien : alienVector)
+	{
+		if (alien->GetIndex() >= 0 && alien->GetIndex() < 11)
+		{
+			alien->SetAlienType(Squid);
+		}
+		else if (alien->GetIndex() > 10 && alien->GetIndex() < 33)
+		{
+			alien->SetAlienType(Crab);
+		}
+		else 
+		{
+			alien->SetAlienType(Octopus);
+		}
 	}
 
 	return 0;
@@ -248,8 +325,8 @@ void Game::UpdateGame()
 		Game::Shutdown();
 	}
 	// Calculate Movement Speed:
-	if(aliensAlive == 1) { movementSpeed = 12.0f;}
-	if(aliensAlive == 2) { movementSpeed = 9.8f;}
+	if(aliensAlive == 1) { movementSpeed = 17.0f;}
+	if(aliensAlive == 2) { movementSpeed = 10.8f;}
 	if (aliensAlive < 5 && aliensAlive > 2) { movementSpeed = 9.0f; }
 	if (aliensAlive > 4 && aliensAlive < 9) { movementSpeed = 8.0f; }
 	if (aliensAlive > 8 && aliensAlive < 16) { movementSpeed = 6.0f; }
@@ -312,6 +389,23 @@ void Game::UpdateGame()
 	{
 		for (auto& alien : alienVector)
 		{
+			if (movementSpeed < 5.0f && movementSpeed > 0.0f)
+			{
+				Mix_PlayChannel(4, alien_move_speed1, 0);
+			}
+			if (movementSpeed < 7.0f && movementSpeed > 5.0f)
+			{
+				Mix_PlayChannel(4, alien_move_speed2, 0);
+			}
+			if (movementSpeed < 9.0f && movementSpeed > 7.0f)
+			{
+				Mix_PlayChannel(4, alien_move_speed3, 0);
+			}
+			if (movementSpeed < 20.0f && movementSpeed > 9.0f)
+			{
+				Mix_PlayChannel(4, alien_move_speed4, 0);
+			}
+			
 			alien->MoveAlien(25);
 			if (alien->GetSpriteNumber() == 1)
 			{
@@ -331,6 +425,7 @@ void Game::UpdateGame()
 	//------------------------------------------
 	/// Step 5: Check if player has fired a bullet, if true,
 	// Check if player is alive:
+	
 	if (player.GetStatus() != Dead)
 	{
 		// spawn a bullet into the 'bulletVector':
@@ -347,6 +442,9 @@ void Game::UpdateGame()
 			bullet->SetPosition(spawnPosition);
 			bulletVector.push_back(bullet);
 			shootingDelay = 0.0f;
+
+			// Play SFX:
+			Mix_PlayChannel(0, player_shoot, 0);
 		}
 	}
 	player.SetHasShot(false);
@@ -377,13 +475,27 @@ void Game::UpdateGame()
 			if (beenShot)
 			{
 				// Delete the Alien:
-				alienVector[i]->SetStatus(Dead);
+				// Play SFX:
+				if (alienVector[i]->GetAlienType() == Squid)
+				{
+					Mix_PlayChannel(2, squid_death, 0);
+				}
+				if (alienVector[i]->GetAlienType() == Crab)
+				{
+					Mix_PlayChannel(2, crab_death, 0);
+				}
+				if (alienVector[i]->GetAlienType() == Octopus)
+				{
+					Mix_PlayChannel(2, octopus_death, 0);
+				}
+				
+				alienVector[i]->SetStatus(JustKilled);
 				bullet->SetHasHit(true);
 			}
 			for (int i = 0; i < (int)bulletVector.size(); i++)
 			{
 				// Delete Bullet (if it hit):
-				if (bulletVector[i]->GetHasHit())
+				if (bulletVector[i]->GetHasHit() || bulletVector[i]->GetPosition().y < 0)
 				{
 					// Delete the Bullet:
 					std::vector<Bullet*>::iterator it2;
@@ -404,8 +516,10 @@ void Game::UpdateGame()
 			// Break the check if the alien has been shot:
 			if (beenShot)
 			{
+
+				// Play SFX:
+				Mix_PlayChannel(3, ufo_death, 0);
 				UFOVector[i]->SetStatus(Dead);
-				
 			}
 			for (int i = 0; i < (int)bulletVector.size(); i++)
 			{
@@ -454,20 +568,23 @@ void Game::UpdateGame()
 		// column.
 		bool hasFoundAlien = false;
 		Alien* shooterAlien = nullptr;
-		while (!hasFoundAlien)
+		if (player.GetStatus() != Dead)
 		{
-			int numb = (rand() % 11);
-			shooterAlien = frontRow[numb];
-			if (shooterAlien != nullptr)
+			while (!hasFoundAlien)
 			{
-				hasFoundAlien = true;
+				int numb = (rand() % 11);
+				shooterAlien = frontRow[numb];
+				if (shooterAlien != nullptr)
+				{
+					hasFoundAlien = true;
+				}
 			}
-		}
-		auto* bullet = new Bullet();
-		bullet->SetPosition(shooterAlien->GetPosition());
-		alienBulletVector.push_back(bullet);
+			auto* bullet = new Bullet();
+			bullet->SetPosition(shooterAlien->GetPosition());
+			alienBulletVector.push_back(bullet);
 
-		alienShootingDelay = 0.0f;
+			alienShootingDelay = 0.0f;
+		}
 	}
 
 	for (auto alienBullets : alienBulletVector)
@@ -487,6 +604,8 @@ void Game::UpdateGame()
 		if (playerHit)
 		{
 			player.SetStatus(Dead);
+			// Play SFX:
+			Mix_PlayChannel(0, player_death, 0);
 			alienBullet->SetStatus(Dead);
 			// Remove a life:
 			int lives = player.GetNumberOfLives();
@@ -530,32 +649,42 @@ void Game::UpdateGame()
 	/// Step 11: Randomly spawn UFO
 	// This code sets up a timer and a random number to spawn the UFO at,
 	// if the timer is exceeds the spawn number, the UFO spawns: 
-	UFOTimer += (2 * deltaTime);
+	UFOTimer += (2.4f * deltaTime);
 	static int UFOSpawnTime = (rand() % 60) + 30;
 	if (UFOTimer > (float)UFOSpawnTime)
 	{
 		Alien* UFO = new Alien();
 		int UFOSpawnSide = (rand() % 2) + 1;
+		Mix_PlayChannel(3, ufo_spawn, 0);
+		// Play spawn music:
 		if (UFOSpawnSide == 1)
 		{
+
 			// Spawn UFO top-left
 			Vector2 UFOSpawnPos{ 30, 50 };
+			Vector2 UFOSpawnScale{ 50, 25 };
 			UFO->SetPosition(UFOSpawnPos);
+			UFO->SetScale(UFOSpawnScale);
 			UFO->SetDirection(1);
 			UFOTimer = 0.0f;
 			UFOVector.push_back(UFO);
 		}
 		if (UFOSpawnSide == 2)
 		{
+
 			// Spawn UFO top-left
 			Vector2 UFOSpawnPos{ 1000, 50 };
+			Vector2 UFOSpawnScale{ 50, 25 };
 			UFO->SetPosition(UFOSpawnPos);
+			UFO->SetScale(UFOSpawnScale);
 			UFO->SetDirection(-1);
 			UFOTimer = 0.0f;
 			UFOVector.push_back(UFO);
-		}
-	}
 
+		}
+		
+	}
+	
 	// Move any UFO's:
 	for (auto* UFO : UFOVector)
 	{
@@ -564,7 +693,18 @@ void Game::UpdateGame()
 			continue;
 		}
 		UFO->MoveAlien(2);
+
+		// Check if UFO goes out of bounds:
+		if (UFO->GetPosition().x > 1400)
+		{
+			UFO->SetStatus(Dead);
+		}
+		else if (UFO->GetPosition().x < -200)
+		{
+			UFO->SetStatus(Dead);
+		}
 	}
+
 
 }
 void Game::GenerateOutput()
@@ -640,6 +780,32 @@ void Game::GenerateOutput()
 		// Get the scale and pos of current alien:
 		Vector2 currentPos = alienVector[i]->GetPosition();
 		Vector2 currentScale = alienVector[i]->GetScale();
+		if (alienVector[i]->GetStatus() == JustKilled)
+		{
+			deathAnimationCounter += 1;
+			SDL_Rect alien{
+			(int)currentPos.x,
+			(int)currentPos.y,
+			30,
+			30
+			};
+			int alienW = (int)currentScale.x;
+			int alienH = (int)currentScale.y;
+			AlienDeathImage = IMG_LoadTexture(m_Renderer, "images/Alien_Death.png");
+			SDL_QueryTexture(AlienDeathImage, nullptr, nullptr, &alienW, &alienH);
+			SDL_RenderCopy(m_Renderer, AlienDeathImage, nullptr, &alien);
+			SDL_DestroyTexture(AlienDeathImage);
+			if (deathAnimationCounter > 7)
+			{
+				alienVector[i]->SetStatus(Dead);
+				deathAnimationCounter = 0;
+			}
+			else
+			{
+				continue;
+			}
+		}
+
 		if (alienVector[i]->GetStatus() == Dead)
 		{
 			continue;
@@ -728,6 +894,17 @@ void Game::GenerateOutput()
 	/// Step 6: Render Alien Bullets:
 	for (auto& alienBullet : alienBulletVector)
 	{
+		// If alien bullet goes past barricade:
+		if (alienBullet->GetPosition().y > 550)
+		{
+			// Set Draw Colour to green:
+			SDL_SetRenderDrawColor(m_Renderer, 50, 182, 60, 255);
+		}
+		else
+		{
+			// Set Draw Colour to white:
+			SDL_SetRenderDrawColor(m_Renderer, 255, 255, 255, 255);
+		}
 		// Set up bullet's hitbox:
 		Vector2 currentBulletPos = alienBullet->GetPosition();
 		Vector2 currentBulletScale = alienBullet->GetScale();
