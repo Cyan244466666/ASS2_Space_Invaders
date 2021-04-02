@@ -15,6 +15,7 @@ private:
 	SDL_Window* m_Window; // This is the game window.
 	SDL_Renderer* m_Renderer; // This will render the game to the window.
 	bool m_IsRunning; // This bool will continue to run the game, until it becomes false.
+	bool m_InMenu; // This bool will continue to run the menu, until it becomes false.
 	int hasShotTimer; // This int tells all functions if the player has shot this frame.
 	Uint32 m_ticksCount; // This will be used when calculating deltaTime.
 	Ship player; // This is the player's ship.
@@ -36,10 +37,16 @@ private:
 	float respawnTimer = 0.0f;
 	float destroyedBulletTimer = 0.0f;
 	float UFOTimer = 0.0f;
+	float modeDelay = 0.0f;
+	bool modePress = false;
+
+	int gameMode = 0; // This int changes depending on the game mode selected.
+	// 0 = Default Mode
+	// 1 = Arcade Mode
+	// 2 = Insight Mode
 
 	// Background Music:
 	Mix_Music* backgroundMusic;
-	
 
 	// SFX:
 	Mix_Chunk* player_shoot;
@@ -69,7 +76,12 @@ private:
 	float firingSpeed = 3.0f;
 
 	bool bulletDestroyed = false;
-	// Variables to hold the alien sprited:
+
+	// Menu Sprites:
+	SDL_Texture* titleImage;
+	SDL_Texture* ship;
+
+	// Game Loop Sprites:
 	SDL_Texture* squidImage;
 	SDL_Texture* crabImage;
 	SDL_Texture* octopusImage;
@@ -83,6 +95,11 @@ private:
 	SDL_Texture* BackImage;
 	// Variable to hold player bullet sprite:
 	SDL_Texture* playerBulletImage;
+	SDL_Texture* arcade_mode;
+	SDL_Texture* default_mode;
+	SDL_Texture* insight_mode;
+	
+
 
 	
 
@@ -102,10 +119,16 @@ public:
 	// Destructor
 	~Game();
 
-	// This function will initialise SDL, the Window, and the Renderer,
-	// when the game is launched. It will return 'true' if successful,
-	// and false otherwise:
-	bool Initialise();
+	
+	bool MenuInitialise();
+
+	void RunMenu(); // This function runs the loop for the menu, once exited, the game starts.
+	void MenuProcessInput(); // Processes all user input.
+	void MenuUpdateGame(); // Makes changed to the game via an update.
+	void MenuGenerateOutput(); // Present the changes made in the update to the screen.
+
+	// This function initialises all assets used when a round starts.
+	void Initialise();
 
 	void RunGameLoop(); // This will run the game each from, calling all three helper Functions:
 	// Helper Functions:
@@ -113,6 +136,7 @@ public:
 	void UpdateGame(); // Makes changed to the game via an update.
 	void GenerateOutput(); // Present the changes made in the update to the screen.
 
-
+	//Getters:
+	bool GetInMenu() { return m_InMenu; }
 	void Shutdown(); // Shuts the game down once the player quits.
 };

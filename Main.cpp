@@ -7,9 +7,14 @@
 int main(int argc, char** argv)
 {
 	Game SpaceInvaders;
-	SpaceInvaders.Initialise();
-	SpaceInvaders.RunGameLoop();
-	
+	SpaceInvaders.MenuInitialise();
+	while(SpaceInvaders.GetInMenu())
+	{ 
+		SpaceInvaders.RunMenu();
+		SpaceInvaders.Initialise();
+		SpaceInvaders.RunGameLoop();
+	}
+
 	SpaceInvaders.Shutdown();
 	return 0;
 }

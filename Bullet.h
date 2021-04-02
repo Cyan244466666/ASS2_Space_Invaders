@@ -19,7 +19,6 @@ private:
 	int m_HurtBoxWidth; // Width of the hurtbox.
 	int m_HurtBoxHeight; // Height of hurtbox.
 	bool m_HasHit;
-	bulletType m_Type; //Sets what alien the bullet came from.
 
 public:
 	// Constructor:
@@ -43,17 +42,13 @@ public:
 	int GetHurtBoxH() { return m_HurtBoxHeight; }
 	float GetSpeed() { return m_Speed; }
 	bool GetHasHit() { return m_HasHit; }
-	bulletType GetBulletType() { return m_Type; }
 
 	//Setters:
 	void SetHurtBoxW(int hurtBoxW) { m_HurtBoxWidth = hurtBoxW; }
 	void SetHurtBoxH(int hurtBoxH) { m_HurtBoxHeight = hurtBoxH; }
 	void SetSpeed(float speed) { m_Speed = speed; }
 	void SetHasHit(bool hasHit) { m_HasHit = hasHit; }
-	void SetBulletType(bulletType _type)
-	{
-		m_Type = _type;
-	}
+
 
 	// Move Bullet:
 	void MoveBullet()
