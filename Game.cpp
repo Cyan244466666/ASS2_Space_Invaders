@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
+#include <SDL_ttf.h>
 #include <time.h>
 #include "GameObject.h"
 #include "Game.h"
@@ -8,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 
 
@@ -69,6 +71,10 @@ Game::Game()
 	arcade_mode = nullptr;
 	default_mode = nullptr;
 	insight_mode = nullptr;
+	round_over = nullptr;
+	player1 = nullptr;
+	player_lives = nullptr;
+	
 
 }
 // Destructor
@@ -122,6 +128,14 @@ bool Game::MenuInitialise()
 		return 1;
 	}
 	return 0;
+
+	/// Step 5: Initialise SDL_TTF
+	if (TTF_Init() < 0)
+	{
+		SDL_Log("Unable to initialise SDL_TTF: %s", SDL_GetError());
+		return 1;
+	}
+	return 0;
 }
 void Game::RunGameLoop() // This will run the game each from, calling all three helper Functions:
 {
@@ -149,7 +163,7 @@ void Game::RunMenu()
 		UFOVector.clear();
 		m_IsRunning = true;
 		player.SetStatus(Alive);
-		Mix_VolumeMusic(3);
+		Mix_VolumeMusic(20);
 	}
 }
 
@@ -192,7 +206,7 @@ void Game::MenuProcessInput()
 void Game::MenuUpdateGame()
 {
 	modeDelay += (1.0f * 0.6f);
-	if (gameMode > 2)
+	if (gameMode > 1)
 	{
 		gameMode = 0;
 	}
@@ -217,8 +231,8 @@ void Game::MenuGenerateOutput()
 	Vector2 shipPos{ 100, 90 };
 	SDL_Rect ship
 	{
-		shipPos.x,
-		shipPos.y,
+		(int)shipPos.x,
+		(int)shipPos.y,
 		340,
 		250
 	};
@@ -230,14 +244,37 @@ void Game::MenuGenerateOutput()
 	// Release Memory:
 	SDL_DestroyTexture(shipImage);
 
+	/// Show "Play Player <1>:
+	player1Delay += (1 * 0.9);
+	if (player1Delay > 49)
+	{
+		Vector2 player1Pos{ 370, 350 };
+		SDL_Rect player1Rect
+		{
+			(int)player1Pos.x,
+			(int)player1Pos.y,
+			260,
+			110
+		};
+		// Load the Ship's image:
+		player1 = IMG_LoadTexture(m_Renderer, "images/player1.png");
+		SDL_RenderCopy(m_Renderer, player1, nullptr, &player1Rect);
+		// Release Memory:
+		SDL_DestroyTexture(player1);
+	}
+
+	if(player1Delay > 100)
+	{
+		player1Delay = 0;
+	}
 
 	/// Display Game Mode
 
 	Vector2 modePos{ 418, 650 };
 	SDL_Rect mode
 	{
-		modePos.x,
-		modePos.y,
+		(int)modePos.x,
+		(int)modePos.y,
 		150,
 		100
 	};
@@ -256,13 +293,6 @@ void Game::MenuGenerateOutput()
 		// Release Memory:
 		SDL_DestroyTexture(default_mode);
 	}
-	else
-	{
-		SDL_Texture* default_mode = IMG_LoadTexture(m_Renderer, "images/insight_mode.png");
-		SDL_RenderCopy(m_Renderer, default_mode, nullptr, &mode);
-		// Release Memory:
-		SDL_DestroyTexture(default_mode);
-	}
 	// Load the Game Mode's image:
 	
 
@@ -270,8 +300,8 @@ void Game::MenuGenerateOutput()
 	Vector2 titlePos{ 350, 100 };
 	SDL_Rect title
 	{
-		titlePos.x,
-		titlePos.y,
+		(int)titlePos.x,
+		(int)titlePos.y,
 		300,
 		150
 	};
@@ -317,9 +347,10 @@ void Game::Initialise()
 		alien_move_speed3 = Mix_LoadWAV("sound_effects/alien_move3.wav");
 		alien_move_speed4 = Mix_LoadWAV("sound_effects/alien_move4.wav");
 
-		
-
-
+		if(TTF_Init()==-1)
+		{
+			SDL_Log("Unable to initialise SDL_TTF: %s", SDL_GetError());
+		}
 		/// Step 2: Play background music in a loop:
 
 		// allocate 16 mixing channels
@@ -360,6 +391,19 @@ void Game::Initialise()
 			alien->SetIndex(i);
 			alien->SetColumn(i % 11);
 
+			// Set the alien's point value:
+			if (alien->GetIndex() >= 0 && alien->GetIndex() < 11)
+			{
+				alien->SetPointValue(30);
+			}
+			if (alien->GetIndex() >= 11 && alien->GetIndex() < 33)
+			{
+				alien->SetPointValue(20);
+			}
+			if (alien->GetIndex() >= 33 && alien->GetIndex() < 55)
+			{
+				alien->SetPointValue(10);
+			}
 
 			// Finally, set the Alien's position vector to
 			// the created coordinates:
@@ -495,12 +539,16 @@ void Game::UpdateGame()
 		{
 			aliensAlive += 1;
 		}
+		if (alien->GetPosition().y > 650)
+		{
+			m_IsRunning = false;
+			m_InMenu = true;
+		}
 	}
 	// End game if there are no aliens:
 	if(aliensAlive == 0)
 	{
-		m_IsRunning = false;
-		m_InMenu = true;
+		roundOver = true;
 	}
 	// Calculate Movement Speed:
 	if(aliensAlive == 1) { movementSpeed = 17.0f;}
@@ -653,6 +701,7 @@ void Game::UpdateGame()
 			// Break the check if the alien has been shot:
 			if (beenShot)
 			{
+				
 				// Delete the Alien:
 				// Play SFX:
 				if (alienVector[i]->GetAlienType() == Squid)
@@ -1238,6 +1287,51 @@ void Game::GenerateOutput()
 	SDL_DestroyTexture(BackImage);
 
 	//------------------------------------------
+	/// Display Round over
+	/*roundOverDelay += (1 * 0.2);
+	if (roundOver)
+	{
+		SDL_Rect roundOver{
+			   0,
+			   760,
+			   1024,
+			   60
+		};
+		round_over = IMG_LoadTexture(m_Renderer, "images/round_over.png");
+		SDL_QueryTexture(round_over, nullptr, nullptr, &roundOver.w, &roundOver.h);
+		SDL_RenderCopy(m_Renderer, round_over, nullptr, &roundOver);
+		SDL_DestroyTexture(round_over);
+		if (roundOverDelay > 40)
+		{
+			roundOverDelay = 0;
+			m_IsRunning = false;
+			m_InMenu = true;
+		}
+		
+	}*/
+
+	/// Display player lives:
+	SDL_Rect playerLivesRect{
+			   800,
+			   10,
+			   200,
+			   30
+	};
+	if (player.GetNumberOfLives() == 3)
+	{
+		player_lives = IMG_LoadTexture(m_Renderer, "images/lives_3.png");
+	}
+	else if (player.GetNumberOfLives() == 2)
+	{
+		player_lives = IMG_LoadTexture(m_Renderer, "images/lives_2.png");
+	}
+	else
+	{
+		player_lives = IMG_LoadTexture(m_Renderer, "images/lives_1.png");
+	}
+	SDL_RenderCopy(m_Renderer, player_lives, nullptr, &playerLivesRect);
+	SDL_DestroyTexture(player_lives);
+
 	/// Final Step: Render all changes:
 	// Present all Render changes to the window:
 	SDL_RenderPresent(m_Renderer);

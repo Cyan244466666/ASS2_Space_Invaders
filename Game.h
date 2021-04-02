@@ -2,7 +2,9 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
+#include <SDL_ttf.h>
 #include <vector>
+#include <string>
 #include "GameObject.h"
 #include "Ship.h"
 #include "Barrier.h"
@@ -28,6 +30,8 @@ private:
 	std::vector <Bullet*> bulletVector;
 	// This vector hold all alien bullets spawned in-game:
 	std::vector <Bullet*> alienBulletVector;
+	// This keeps track if the round is over or not:
+	bool roundOver = false;
 
 	// These are time counters used to time the execution of some code (e.g. alien movement and shooting bullets):
 	float movementTimer = 0.0f;
@@ -37,9 +41,12 @@ private:
 	float respawnTimer = 0.0f;
 	float destroyedBulletTimer = 0.0f;
 	float UFOTimer = 0.0f;
+	int deathAnimationCounter = 0;
 	float modeDelay = 0.0f;
+	float roundOverDelay = 0.0f;
+	double player1Delay = 0.0;
 	bool modePress = false;
-
+	int playerScore = 0; // Keeps track of the player's score:
 	int gameMode = 0; // This int changes depending on the game mode selected.
 	// 0 = Default Mode
 	// 1 = Arcade Mode
@@ -91,15 +98,20 @@ private:
 	float alienBulletCounter; // This number is used to determine what frame of a bullet to display.
 	SDL_Texture* JoystickImage;
 	SDL_Texture* ButtomImage;
-	int deathAnimationCounter = 0;
 	SDL_Texture* BackImage;
 	// Variable to hold player bullet sprite:
 	SDL_Texture* playerBulletImage;
 	SDL_Texture* arcade_mode;
 	SDL_Texture* default_mode;
 	SDL_Texture* insight_mode;
+	SDL_Texture* round_over;
+	SDL_Texture* player1;
+	SDL_Texture* player_lives;
+	// Variables to hold text:
 	
-
+	
+	
+	std::string currentScore;
 
 	
 
