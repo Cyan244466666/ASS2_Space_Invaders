@@ -15,6 +15,7 @@ private:
 	SDL_Window* m_Window; // This is the game window.
 	SDL_Renderer* m_Renderer; // This will render the game to the window.
 	bool m_IsRunning; // This bool will continue to run the game, until it becomes false.
+	int hasShotTimer; // This int tells all functions if the player has shot this frame.
 	Uint32 m_ticksCount; // This will be used when calculating deltaTime.
 	Ship player; // This is the player's ship.
 	Vector2 updatePlayerPos{ 512, 650 };
@@ -26,16 +27,15 @@ private:
 	std::vector <Bullet*> bulletVector;
 	// This vector hold all alien bullets spawned in-game:
 	std::vector <Bullet*> alienBulletVector;
+
 	// These are time counters used to time the execution of some code (e.g. alien movement and shooting bullets):
 	float movementTimer = 0.0f;
 	float shootingDelay = 0.0f;
 	float alienShootingDelay = 0.0f;
 	bool activateRespawnTimer = false;
 	float respawnTimer = 0.0f;
+	float destroyedBulletTimer = 0.0f;
 	float UFOTimer = 0.0f;
-
-	int musicPlaying1 = 0;
-	int musicPlaying2 = 0;
 
 	// Background Music:
 	Mix_Music* backgroundMusic;
@@ -67,16 +67,24 @@ private:
 	float movementSpeed = 0.0f;
 	// Dictates firing speed of aliens:
 	float firingSpeed = 3.0f;
+
+	bool bulletDestroyed = false;
 	// Variables to hold the alien sprited:
 	SDL_Texture* squidImage;
 	SDL_Texture* crabImage;
 	SDL_Texture* octopusImage;
 	SDL_Texture* UFOImage;
 	SDL_Texture* AlienDeathImage;
+	SDL_Texture* AlienBulletImage;
+	float alienBulletCounter; // This number is used to determine what frame of a bullet to display.
+	SDL_Texture* JoystickImage;
+	SDL_Texture* ButtomImage;
 	int deathAnimationCounter = 0;
+	SDL_Texture* BackImage;
 	// Variable to hold player bullet sprite:
 	SDL_Texture* playerBulletImage;
 
+	
 
 
 

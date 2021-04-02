@@ -26,6 +26,8 @@ Game::Game()
 	barrierRight = { 904, 0, 220, 768 };
 	barrierLeft = {0, 0, 135, 768};
 	
+	hasShotTimer = 0;
+
 	// Sprites:
 	squidImage = nullptr;
 	crabImage = nullptr;
@@ -56,6 +58,11 @@ Game::Game()
 	alien_move_speed2 = nullptr;
 	alien_move_speed3 = nullptr;
 	alien_move_speed4 = nullptr;
+	JoystickImage = nullptr;
+	ButtomImage = nullptr;
+	AlienBulletImage = nullptr;
+	alienBulletCounter = 0.0f;
+	BackImage = nullptr;
 }
 // Destructor
 Game::~Game() {}
@@ -441,6 +448,7 @@ void Game::UpdateGame()
 			Vector2 spawnPosition{ shipCurrentPos.x + 5, shipCurrentPos.y };
 			bullet->SetPosition(spawnPosition);
 			bulletVector.push_back(bullet);
+			hasShotTimer = 10;
 			shootingDelay = 0.0f;
 
 			// Play SFX:
@@ -580,6 +588,20 @@ void Game::UpdateGame()
 				}
 			}
 			auto* bullet = new Bullet();
+			// Set what type of alien the bullet has come from,
+			// this will determine how to render the bullet.
+			if (shooterAlien->GetAlienType() == Squid)
+			{
+				bullet->SetBulletType(SquidBullet);
+			}
+			if (shooterAlien->GetAlienType() == Crab)
+			{
+				bullet->SetBulletType(CrabBullet);
+			}
+			if (shooterAlien->GetAlienType() == Octopus)
+			{
+				bullet->SetBulletType(OctopusBullet);
+			}
 			bullet->SetPosition(shooterAlien->GetPosition());
 			alienBulletVector.push_back(bullet);
 
@@ -767,9 +789,8 @@ void Game::GenerateOutput()
 	//------------------------------------------
 
 	
-	//------------------------------------------
 
-	/// Step 5: Render the Aliens:
+	/// Step 4: Render the Aliens:
 	// Set Render colour to white:
 	SDL_SetRenderDrawColor(m_Renderer, 255, 255, 255, 255);
 
@@ -891,41 +912,91 @@ void Game::GenerateOutput()
 	}
 
 	//------------------------------------------
-	/// Step 6: Render Alien Bullets:
+	/// Step 5: Render Alien Bullets:
+	alienBulletCounter += (2 * 0.60f);
 	for (auto& alienBullet : alienBulletVector)
 	{
-		// If alien bullet goes past barricade:
-		if (alienBullet->GetPosition().y > 550)
+		// This check makes sure that bullets aren't rendered when outside the window,
+		// preventing memory leaks:
+		if (alienBullet->GetPosition().y < 760)
 		{
-			// Set Draw Colour to green:
-			SDL_SetRenderDrawColor(m_Renderer, 50, 182, 60, 255);
+			// Reset Timer:
+			if (alienBulletCounter > 80)
+			{
+				alienBulletCounter = 0;
+			}
+
+			// This code will render alien bullets white (if before barricades), green if after:
+			if (alienBulletCounter > 0 && alienBulletCounter < 21)
+			{
+				if (alienBullet->GetPosition().y > 550)
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_1g.png");
+				}
+				else
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_1.png");
+				}
+			}
+			if (alienBulletCounter > 20 && alienBulletCounter < 41)
+			{
+				if (alienBullet->GetPosition().y > 550)
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_2g.png");
+				}
+				else
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_2.png");
+				}
+
+			}
+			if (alienBulletCounter > 40 && alienBulletCounter < 61)
+			{
+				if (alienBullet->GetPosition().y > 550)
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_3g.png");
+				}
+				else
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_3.png");
+				}
+			}
+			if (alienBulletCounter > 60 && alienBulletCounter < 80)
+			{
+				if (alienBullet->GetPosition().y > 550)
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_4g.png");
+				}
+				else
+				{
+					AlienBulletImage = IMG_LoadTexture(m_Renderer, "images/Alien_Bullet_1_4.png");
+				}
+
+			}
+
+			// Set up bullet's hitbox:
+			Vector2 currentBulletPos = alienBullet->GetPosition();
+			Vector2 currentBulletScale = alienBullet->GetScale();
+			int bulletWidth = (int)currentBulletScale.x;
+			int bulletHeight = (int)currentBulletScale.y;
+
+			// This is the bullet's hitbox:
+			SDL_Rect alienBullet
+			{
+				(int)currentBulletPos.x,
+				(int)currentBulletPos.y,
+				6,
+				20
+			};
+			SDL_QueryTexture(AlienBulletImage, nullptr, nullptr, &bulletWidth, &bulletHeight);
+			SDL_RenderCopy(m_Renderer, AlienBulletImage, nullptr, &alienBullet);
+			SDL_DestroyTexture(AlienBulletImage);
 		}
-		else
-		{
-			// Set Draw Colour to white:
-			SDL_SetRenderDrawColor(m_Renderer, 255, 255, 255, 255);
-		}
-		// Set up bullet's hitbox:
-		Vector2 currentBulletPos = alienBullet->GetPosition();
-		Vector2 currentBulletScale = alienBullet->GetScale();
-		int bulletWidth = (int)currentBulletScale.x;
-		int bulletHeight = (int)currentBulletScale.y;
-
-		// This is the bullet's hitbox:
-		SDL_Rect alienBullet
-		{
-			(int)currentBulletPos.x,
-			(int)currentBulletPos.y,
-			(int)currentBulletScale.x,
-			(int)currentBulletScale.y
-		};
-
-		SDL_RenderFillRect(m_Renderer, &alienBullet);
-
+		
 	}
 
 	//------------------------------------------
-	/// Step 7: Render UFO:
+	/// Step 6: Render UFO:
 	for (auto* UFO : UFOVector)
 	{
 		if (UFO->GetStatus() == Dead)
@@ -946,6 +1017,61 @@ void Game::GenerateOutput()
 		SDL_DestroyTexture(UFOImage);
 	}
 
+	//------------------------------------------
+	/// Step 7: Render UI:
+	// Render ArcadeMode Joystick
+	SDL_Rect Joystick{
+			200,
+			670,
+			60,
+			60
+	};
+	if (player.GetDirection() < 0)
+	{
+		JoystickImage = IMG_LoadTexture(m_Renderer, "images/joystick_left.png");
+	}
+	else if (player.GetDirection() > 0)
+	{
+		JoystickImage = IMG_LoadTexture(m_Renderer, "images/joystick_right.png");
+	}
+	else
+	{
+		JoystickImage = IMG_LoadTexture(m_Renderer, "images/joystick.png");
+	}
+	SDL_QueryTexture(JoystickImage, nullptr, nullptr, &Joystick.w, &Joystick.h);
+	SDL_RenderCopy(m_Renderer, JoystickImage, nullptr, &Joystick);
+	SDL_DestroyTexture(JoystickImage);
+
+	// Render ArcadeMode Button:
+	SDL_Rect Button{
+			150,
+			720,
+			60,
+			60
+	};
+	if (hasShotTimer > 0)
+	{
+		ButtomImage = IMG_LoadTexture(m_Renderer, "images/button_down.png");
+		hasShotTimer -= 1;
+	}
+	else
+	{
+		ButtomImage = IMG_LoadTexture(m_Renderer, "images/button_up.png");
+	}
+	SDL_QueryTexture(ButtomImage, nullptr, nullptr, &Button.w, &Button.h);
+	SDL_RenderCopy(m_Renderer, ButtomImage, nullptr, &Button);
+	SDL_DestroyTexture(ButtomImage);
+
+	SDL_Rect Back{
+			0,
+			760,
+			1024,
+			60
+	};
+	BackImage = IMG_LoadTexture(m_Renderer, "images/Back_Area.png");
+	SDL_QueryTexture(BackImage, nullptr, nullptr, &Back.w, &Back.h);
+	SDL_RenderCopy(m_Renderer, BackImage, nullptr, &Back);
+	SDL_DestroyTexture(BackImage);
 	/// Final Step: Render all changes:
 	// Present all Render changes to the window:
 	SDL_RenderPresent(m_Renderer);
