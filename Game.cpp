@@ -45,7 +45,7 @@ Game::Game()
 
 	// Music
 	backgroundMusic = nullptr;
-
+	backgroundMusic2 = nullptr;
 	// SFX:
 	barrier_destroyed = nullptr;
 	barrier_hit = nullptr;
@@ -72,6 +72,7 @@ Game::Game()
 	arcade_mode = nullptr;
 	default_mode = nullptr;
 	insight_mode = nullptr;
+	lonely_driver_mode = nullptr;
 	round_over = nullptr;
 	player1 = nullptr;
 	player_lives = nullptr;
@@ -85,6 +86,30 @@ Game::Game()
 	scoreNumb = nullptr;
 	lastRoundScore = nullptr;
 	waveNumb = nullptr;
+	barricade1 = 0;
+	barricade2 = 0;
+	barricade3 = 0;
+	barricade4 = 0;
+
+	// TTF - Insight/Debug Mode
+	debugSurface = nullptr;
+	playerXPosTexture = nullptr;
+	alienYPosTexture = nullptr;
+	totalAliensAliveTexture = nullptr;
+	squidsAliveTexture = nullptr;
+	crabsAliveTexture = nullptr;
+	octopusesAliveTexture = nullptr;
+	UFOsAliveTexture = nullptr;
+	alienMovementSpeedTexture = nullptr;
+	alienFireSpeedTexture = nullptr;
+	playerShotTexture = nullptr;
+	CurrentWavePlayeTimeTexture = nullptr;
+	bulletsFiredTexture = nullptr;
+	alienBulletsFiredTexture = nullptr;
+	barricadeHealthTexture1 = nullptr;
+	barricadeHealthTexture2 = nullptr;
+	barricadeHealthTexture3 = nullptr;
+	barricadeHealthTexture4 = nullptr;
 
 }
 // Destructor
@@ -174,6 +199,8 @@ void Game::RunMenu()
 		m_IsRunning = true;
 		player.SetStatus(Alive);
 		Mix_VolumeMusic(20);
+		m_BulletsFired = 0;
+	    m_AlienBulletsFired = 0; 
 	}
 }
 
@@ -217,7 +244,7 @@ void Game::MenuUpdateGame()
 {
 	Mix_VolumeMusic(1);
 	modeDelay += (1.0f * 0.6f);
-	if (gameMode > 2)
+	if (gameMode > 3)
 	{
 		gameMode = 0;
 	}
@@ -331,6 +358,13 @@ void Game::MenuGenerateOutput()
 		// Release Memory:
 		SDL_DestroyTexture(insight_mode);
 	}
+	else if (gameMode == 3)
+	{
+		lonely_driver_mode = IMG_LoadTexture(m_Renderer, "images/lonely_driver_mode.png");
+		SDL_RenderCopy(m_Renderer, lonely_driver_mode, nullptr, &mode);
+		// Release Memory:
+		SDL_DestroyTexture(lonely_driver_mode);
+	}
 	// Load the Game Mode's image:
 	
 
@@ -350,7 +384,21 @@ void Game::MenuGenerateOutput()
 	// Release Memory:
 	SDL_DestroyTexture(titleImage);
 
-	
+	/// Display Instructions
+	Vector2 InstructionsPos{ 30, 550 };
+	SDL_Rect instructions
+	{
+		(int)InstructionsPos.x,
+		(int)InstructionsPos.y,
+		200,
+		200
+	};
+	// Load the Ship's image:
+	SDL_Texture* instructionsImage = IMG_LoadTexture(m_Renderer, "images/instructions.png");
+
+	SDL_RenderCopy(m_Renderer, instructionsImage, nullptr, &instructions);
+	// Release Memory:
+	SDL_DestroyTexture(instructionsImage);
 
 	/// Present Changes:
 
@@ -366,8 +414,8 @@ void Game::Initialise()
 		//------------------------------------------
 		/// Step 1: Initialise SDL mixer:
 		Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
-		menu_press = Mix_LoadWAV("sound_effects/menu_press.wav");
-
+		
+		backgroundMusic2 = Mix_LoadMUS("music/love.mp3");
 		backgroundMusic = Mix_LoadMUS("music/invader.mp3");
 		player_shoot = Mix_LoadWAV("sound_effects/player_shoot.wav");
 		barrier_destroyed = Mix_LoadWAV("sound_effects/barrier_destroyed.wav");
@@ -385,6 +433,7 @@ void Game::Initialise()
 		alien_move_speed3 = Mix_LoadWAV("sound_effects/alien_move3.wav");
 		alien_move_speed4 = Mix_LoadWAV("sound_effects/alien_move4.wav");
 		gameover = Mix_LoadWAV("sound_effects/gameover.wav");
+		menu_press = Mix_LoadWAV("sound_effects/menu_press.wav");
 		
 
 		if(TTF_Init()==-1)
@@ -395,12 +444,19 @@ void Game::Initialise()
 
 		// allocate 16 mixing channels
 		Mix_AllocateChannels(16);
-		if (m_IsRunning)
+		if (m_IsRunning && gameMode != 3)
 		{
 			Mix_PlayMusic(backgroundMusic, -1);
+			Mix_VolumeMusic(10);
+		}
+		else if (m_IsRunning && gameMode == 3)
+		{
+			Mix_PlayMusic(backgroundMusic2, -1);
+			Mix_VolumeMusic(20);
+			
 		}
 		// Set Volume for channels:
-		Mix_VolumeMusic(10);
+	
 		Mix_Volume(-1, 15);
 		Mix_Volume(2, 5);
 		Mix_Volume(4, 30);
@@ -496,6 +552,8 @@ void Game::Initialise()
 		m_CurrentWave++;
 	}
 	
+	/*/// Reset wave timer:
+	m_WavePlayTime = 0;*/
 }
 // Helper Functions:
 void Game::ProcessInput()
@@ -731,6 +789,7 @@ void Game::UpdateGame()
 		// If the player has shot, and the delay timer is up:
 		if (player.GetHasShot() == true && shootingDelay > 2.8f)
 		{
+			m_BulletsFired += 1;
 			// Spawn bullet on player position:
 			auto* bullet = new Bullet();
 			Vector2 spawnPosition{ shipCurrentPos.x + 5, shipCurrentPos.y };
@@ -843,7 +902,7 @@ void Game::UpdateGame()
 
 	//------------------------------------------
 
-	/// Step 7: Check which aliens are in the front row:
+	/// Step 7: Check which aliens are in the front row - and randomly pick one of them to shoot a bullet:
 	// Set bool values to ensure only one alien is marked for each column.
 	alienShootingDelay += (firingSpeed * deltaTime);
 	if (alienShootingDelay > 2.0f)
@@ -886,6 +945,7 @@ void Game::UpdateGame()
 					hasFoundAlien = true;
 				}
 			}
+			m_AlienBulletsFired += 1;
 			auto* bullet = new Bullet();
 			// Set what type of alien the bullet has come from,
 			// this will determine how to render the bullet.
@@ -1098,39 +1158,20 @@ void Game::UpdateGame()
 
 		}
 	}
-
+	
 	for (int i = 0; i < (int)alienBulletVector.size(); i++)
 	{
 		for (auto* barricade : barricadeVector)
 		{
-			if (barricade->BulletCollision(alienBulletVector[i]->GetPosition(), alienBulletVector[i]->GetScale()))
+			if (barricade->GetHealth() > 0)
 			{
-				Mix_PlayChannel(5, barrier_hit, 0);
-				int changeHealth = barricade->GetHealth();
-				changeHealth -= 7;
-				barricade->SetHealth(changeHealth);
-				alienBulletVector[i]->SetStatus(Dead);
-				barrierHitDelay = 0;
-				}
-				else
-				{
-					continue;
-				}
-			}
-		}
-
-		// Check collision against player bullets:
-		for (auto* bullet : bulletVector)
-		{
-			for (auto* barricade : barricadeVector)
-			{
-				if (barricade->BulletCollision(bullet->GetPosition(), bullet->GetScale()))
+				if (barricade->BulletCollision(alienBulletVector[i]->GetPosition(), alienBulletVector[i]->GetScale()))
 				{
 					Mix_PlayChannel(5, barrier_hit, 0);
 					int changeHealth = barricade->GetHealth();
 					changeHealth -= 7;
 					barricade->SetHealth(changeHealth);
-					bullet->SetStatus(Dead);
+					alienBulletVector[i]->SetStatus(Dead);
 					barrierHitDelay = 0;
 				}
 				else
@@ -1139,22 +1180,46 @@ void Game::UpdateGame()
 				}
 			}
 		}
+		}
 
-		// If barricade health becomes 0, then it's dead
-		for (auto* barricade : barricadeVector)
+		// Check collision against player bullets:
+		for (auto* bullet : bulletVector)
 		{
-			for (int i = 0; i < (int)barricadeVector.size(); i++)
+			for (auto* barricade : barricadeVector)
 			{
-				if (barricadeVector[i]->GetHealth() <= 0)
+				if (barricade->GetHealth() > 0)
 				{
-					Mix_PlayChannel(3, barrier_destroyed, 0);
-					// Delete the Barricade:
-					std::vector<Barricade*>::iterator it;
-					it = barricadeVector.begin() + i;
-					barricadeVector.erase(it);
+					if (barricade->BulletCollision(bullet->GetPosition(), bullet->GetScale()))
+					{
+						Mix_PlayChannel(5, barrier_hit, 0);
+						int changeHealth = barricade->GetHealth();
+						changeHealth -= 7;
+						barricade->SetHealth(changeHealth);
+						bullet->SetStatus(Dead);
+						barrierHitDelay = 0;
+					}
+					else
+					{
+						continue;
+					}
 				}
 			}
 		}
+
+
+
+		if (!m_IsRunning)
+		{
+			for (int i = 0; i < (int)barricadeVector.size(); i++)
+			{
+				// Delete the Barricade:
+				std::vector<Barricade*>::iterator it;
+				it = barricadeVector.begin() + i;
+				barricadeVector.erase(it);
+			}
+		}
+
+	
 
 }
 void Game::GenerateOutput()
@@ -1533,39 +1598,39 @@ void Game::GenerateOutput()
 	SDL_SetRenderDrawColor(m_Renderer, 0, 252, 0, 255);
 	for (auto* barricade : barricadeVector)
 	{
-		if (barricade->GetStatus() == Dead)
+		if (barricade->GetHealth() > 0)
 		{
-			continue;
+
+			SDL_Rect barricadeRect{
+				(int)barricade->GetPosition().x,
+				(int)barricade->GetPosition().y,
+				90,
+				70
+			};
+			if (barricade->GetHealth() > 60)
+			{
+				barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_1.png");
+			}
+			else if (barricade->GetHealth() > 45 && barricade->GetHealth() < 61)
+			{
+				barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_2.png");
+			}
+			else if (barricade->GetHealth() > 20 && barricade->GetHealth() < 46)
+			{
+				barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_3.png");
+			}
+			else if (barricade->GetHealth() > 10 && barricade->GetHealth() < 47)
+			{
+				barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_4.png");
+			}
+			else
+			{
+				barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_5.png");
+			}
+
+			SDL_RenderCopy(m_Renderer, barricadeImage, nullptr, &barricadeRect);
+			SDL_DestroyTexture(barricadeImage);
 		}
-		SDL_Rect barricadeRect{
-			(int)barricade->GetPosition().x,
-			(int)barricade->GetPosition().y,
-			90,
-			70
-		};
-		if (barricade->GetHealth() > 60)
-		{
-			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_1.png");
-		}
-		else if (barricade->GetHealth() > 45 && barricade->GetHealth() < 61)
-		{
-			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_2.png");
-		}
-		else if (barricade->GetHealth() > 20 && barricade->GetHealth() < 46)
-		{
-			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_3.png");
-		}
-		else if (barricade->GetHealth() > 10 && barricade->GetHealth() < 47)
-		{
-			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_4.png");
-		}
-		else
-		{
-			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_5.png");
-		}
-		
-		SDL_RenderCopy(m_Renderer, barricadeImage, nullptr, &barricadeRect);
-		SDL_DestroyTexture(barricadeImage);
 	}
 
 	/// Render player's score:
@@ -1578,7 +1643,6 @@ void Game::GenerateOutput()
 	// Set Colour:
 	SDL_Color white{ 255, 255, 255, 255 };
 	SDL_Color green{ 0, 248, 0, 255 };
-
 
 	// Setup Surface:
 	score = TTF_RenderText_Solid(font, "SCORE: ", white);
@@ -1664,9 +1728,304 @@ void Game::GenerateOutput()
 
 	/// Display Insight Mode content:
 	// Initialise font:
-	font = TTF_OpenFont("font/font.ttf", 20);
+	if (gameMode == 2)
+	{
+		font = TTF_OpenFont("font/font2.ttf", 20);
 
+		// Setup PlayerXPos:
+		std::string playerXPosStr = "Player X-Pos: " + std::to_string(player.GetPosition().x);
+		debugSurface = TTF_RenderText_Solid(font, playerXPosStr.c_str(), white);
+		playerXPosTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect playerXPosTextureRect{
+			20,
+			620,
+			200,
+			20
+		};
 
+		// Setup AlienYPos:
+		int alienPos = 0;
+		for (int i = 0; i < (int)alienVector.size(); i++)
+		{
+
+			if (alienVector[i]->GetIndex() > alienPos && alienVector[i]->GetStatus() != Dead)
+			{
+				alienPos = (int)alienVector[i]->GetPosition().y;
+			}
+		}
+		std::string alienYPosStr = "Front Alien Y-Pos: " + std::to_string(alienPos);
+		debugSurface = TTF_RenderText_Solid(font, alienYPosStr.c_str(), white);
+		alienYPosTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect alienYPosTextureRect{
+			20,
+			640,
+			170,
+			20
+		};
+
+		// Setup Total Aliens Alive:
+		int aliensAlive = 0;
+		int squidsAlive = 0;
+		int crabsAlive = 0;
+		int octopusesAlive = 0;
+		for (auto* alien : alienVector)
+		{
+			if (alien->GetStatus() == Alive)
+			{
+				aliensAlive += 1;
+			}
+			if (alien->GetStatus() == Alive && alien->GetAlienType() == Squid)
+			{
+				squidsAlive += 1;
+			}
+			if (alien->GetStatus() == Alive && alien->GetAlienType() == Crab)
+			{
+				crabsAlive += 1;
+			}
+			if (alien->GetStatus() == Alive && alien->GetAlienType() == Octopus)
+			{
+				octopusesAlive += 1;
+			}
+		}
+
+		std::string alienAliveStr = "Total Aliens: " + std::to_string(aliensAlive);
+		debugSurface = TTF_RenderText_Solid(font, alienAliveStr.c_str(), white);
+		totalAliensAliveTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect totalAliensAliveTextureRect{
+			20,
+			660,
+			130,
+			20
+		};
+
+		// Setup Total Squids Alive:
+
+		std::string squidsAliveStr = "Total Squids: " + std::to_string(squidsAlive);
+		debugSurface = TTF_RenderText_Solid(font, squidsAliveStr.c_str(), white);
+		squidsAliveTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect squidsAliveTextureRect{
+			20,
+			680,
+			130,
+			20
+		};
+
+		// Setup Total Crabs Alive:
+		std::string crabsAliveStr = "Total Crabs: " + std::to_string(crabsAlive);
+		debugSurface = TTF_RenderText_Solid(font, crabsAliveStr.c_str(), white);
+		crabsAliveTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect crabsAliveTextureRect{
+			20,
+			700,
+			130,
+			20
+		};
+
+		// Setup Total Octopuses Alive:
+		std::string octopusesAliveStr = "Total Octopuses: " + std::to_string(octopusesAlive);
+		debugSurface = TTF_RenderText_Solid(font, octopusesAliveStr.c_str(), white);
+		octopusesAliveTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect octopusesAliveTextureRect{
+			20,
+			720,
+			160,
+			20
+		};
+
+		// Setup Total UFOs Alive:
+		int UFOsAlive = 0;
+		for (auto UFO : UFOVector)
+		{
+			if (UFO->GetStatus() == Alive)
+			{
+				UFOsAlive += 1;
+			}
+		}
+		std::string UFOsAliveStr = "Total UFOs: " + std::to_string(UFOsAlive);
+		debugSurface = TTF_RenderText_Solid(font, UFOsAliveStr.c_str(), white);
+		UFOsAliveTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect UFOsAliveTextureRect{
+			260,
+			620,
+			110,
+			20
+		};
+
+		// Setup Alien Shooting Delay:
+		std::string AlienShootingDelayStr = "Alien Fire Speed: " + std::to_string(alienShootingDelay);
+		debugSurface = TTF_RenderText_Solid(font, AlienShootingDelayStr.c_str(), white);
+		alienFireSpeedTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect alienFireSpeedTextureRect{
+			260,
+			640,
+			200,
+			20
+		};
+
+		// Setup Alien Movement Delay:
+		std::string AlienMovementDelayStr = "Alien Movement Speed: " + std::to_string(movementTimer);
+		debugSurface = TTF_RenderText_Solid(font, AlienMovementDelayStr.c_str(), white);
+		alienMovementSpeedTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect alienMovementSpeedTextureRect{
+			260,
+			660,
+			240,
+			20
+		};
+
+		// Setup Number of bullets player has shot:
+		std::string bulletsFiredStr = "Bullets Fired: " + std::to_string(m_BulletsFired);
+		debugSurface = TTF_RenderText_Solid(font, bulletsFiredStr.c_str(), white);
+		bulletsFiredTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect bulletsFiredTextureRect{
+			260,
+			680,
+			130,
+			20
+		};
+
+		// Setup Number of bullets aliens have shot:
+		std::string alienBulletsFiredStr = "Alien Bullets Fired: " + std::to_string(m_AlienBulletsFired);
+		debugSurface = TTF_RenderText_Solid(font, alienBulletsFiredStr.c_str(), white);
+		alienBulletsFiredTexture = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect alienBulletsFiredTextureRect{
+			260,
+			700,
+			170,
+			20
+		};
+
+		for (int i = 0; i < (int)barricadeVector.size(); i++)
+		{
+			if (i == 0)
+			{
+				barricade1 = barricadeVector[i]->GetHealth();
+			}
+			if (i == 1)
+			{
+				barricade2 = barricadeVector[i]->GetHealth();
+			}
+			if (i == 2)
+			{
+				barricade3 = barricadeVector[i]->GetHealth();
+			}
+			if (i == 3)
+			{
+				barricade4 = barricadeVector[i]->GetHealth();
+			}
+		}
+		if (barricade1 < 0)
+		{
+			barricade1 = 0;
+		}
+		if (barricade2 < 0)
+		{
+			barricade2 = 0;
+		}
+		if (barricade3 < 0)
+		{
+			barricade3 = 0;
+		}
+		if (barricade3 < 0)
+		{
+			barricade3 = 0;
+		}
+		// Setup Barricade Health 1:
+		std::string barricade1HPStr = std::to_string(barricade1);
+		debugSurface = TTF_RenderText_Solid(font, barricade1HPStr.c_str(), white);
+		barricadeHealthTexture1 = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect barricadeHealthTexture1Rect{
+			140,
+			500,
+			30,
+			20
+		};
+
+		// Setup Barricade Health 2:
+		std::string barricade2HPStr = std::to_string(barricade2);
+		debugSurface = TTF_RenderText_Solid(font, barricade2HPStr.c_str(), white);
+		barricadeHealthTexture2 = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect barricadeHealthTexture2Rect{
+			370,
+			500,
+			30,
+			20
+		};
+
+		// Setup Barricade Health 3:
+		std::string barricade3HPStr = std::to_string(barricade3);
+		debugSurface = TTF_RenderText_Solid(font, barricade3HPStr.c_str(), white);
+		barricadeHealthTexture3 = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect barricadeHealthTexture3Rect{
+			600,
+			500,
+			30,
+			20
+		};
+
+		// Setup Barricade Health 4:
+		std::string barricade4HPStr = std::to_string(barricade4);
+		debugSurface = TTF_RenderText_Solid(font, barricade4HPStr.c_str(), white);
+		barricadeHealthTexture4 = SDL_CreateTextureFromSurface(m_Renderer, debugSurface);
+		SDL_FreeSurface(debugSurface);
+		SDL_Rect barricadeHealthTexture4Rect{
+			830,
+			500,
+			30,
+			20
+		};
+
+		// Render all:
+		SDL_RenderCopy(m_Renderer, playerXPosTexture, NULL, &playerXPosTextureRect);
+		SDL_RenderCopy(m_Renderer, alienYPosTexture, NULL, &alienYPosTextureRect);
+		SDL_RenderCopy(m_Renderer, totalAliensAliveTexture, NULL, &totalAliensAliveTextureRect);
+		SDL_RenderCopy(m_Renderer, squidsAliveTexture, NULL, &squidsAliveTextureRect);
+		SDL_RenderCopy(m_Renderer, crabsAliveTexture, NULL, &crabsAliveTextureRect);
+		SDL_RenderCopy(m_Renderer, octopusesAliveTexture, NULL, &octopusesAliveTextureRect);
+		SDL_RenderCopy(m_Renderer, UFOsAliveTexture, NULL, &UFOsAliveTextureRect);
+		SDL_RenderCopy(m_Renderer, alienFireSpeedTexture, NULL, &alienFireSpeedTextureRect);
+		SDL_RenderCopy(m_Renderer, alienMovementSpeedTexture, NULL, &alienMovementSpeedTextureRect);
+		SDL_RenderCopy(m_Renderer, bulletsFiredTexture, NULL, &bulletsFiredTextureRect);
+		SDL_RenderCopy(m_Renderer, alienBulletsFiredTexture, NULL, &alienBulletsFiredTextureRect);
+		SDL_RenderCopy(m_Renderer, barricadeHealthTexture1, NULL, &barricadeHealthTexture1Rect);
+		SDL_RenderCopy(m_Renderer, barricadeHealthTexture2, NULL, &barricadeHealthTexture2Rect);
+		SDL_RenderCopy(m_Renderer, barricadeHealthTexture3, NULL, &barricadeHealthTexture3Rect);
+		SDL_RenderCopy(m_Renderer, barricadeHealthTexture4, NULL, &barricadeHealthTexture4Rect);
+
+		// Delete all Textures:
+		SDL_DestroyTexture(playerXPosTexture);
+		SDL_DestroyTexture(alienYPosTexture);
+		SDL_DestroyTexture(totalAliensAliveTexture);
+		SDL_DestroyTexture(squidsAliveTexture);
+		SDL_DestroyTexture(crabsAliveTexture);
+		SDL_DestroyTexture(octopusesAliveTexture);
+		SDL_DestroyTexture(UFOsAliveTexture);
+		SDL_DestroyTexture(alienFireSpeedTexture);
+		SDL_DestroyTexture(alienMovementSpeedTexture);
+		SDL_DestroyTexture(bulletsFiredTexture);
+		SDL_DestroyTexture(alienBulletsFiredTexture);
+		SDL_DestroyTexture(barricadeHealthTexture1);
+		SDL_DestroyTexture(barricadeHealthTexture2);
+		SDL_DestroyTexture(barricadeHealthTexture3);
+		SDL_DestroyTexture(barricadeHealthTexture4);
+
+		// Close Font after use:
+		TTF_CloseFont(font);
+	}
 
 	/// Final Step: Render all changes:
 	// Present all Render changes to the window:

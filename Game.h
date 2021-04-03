@@ -58,7 +58,7 @@ private:
 
 	// Background Music:
 	Mix_Music* backgroundMusic;
-
+	Mix_Music* backgroundMusic2;
 	// SFX:
 	Mix_Chunk* player_shoot;
 	Mix_Chunk* barrier_destroyed;
@@ -109,6 +109,7 @@ private:
 	SDL_Texture* arcade_mode;
 	SDL_Texture* default_mode;
 	SDL_Texture* insight_mode;
+	SDL_Texture* lonely_driver_mode;
 	SDL_Texture* round_over;
 	SDL_Texture* player1;
 	SDL_Texture* player_lives;
@@ -118,7 +119,10 @@ private:
 	bool m_gameWon = false; // Checks if player won the round.
 	int m_lastScore = 0; // Keeps track of player's last round score.
 	int m_CurrentWave = 0; //  Keeps track of player's current wave.
-
+	//float m_WavePlayTime = 0; // Keeps track of how long the player has played in this round.
+	int m_BulletsFired = 0; // Keeps track of how many bullets the player has fired in this round.
+	int m_AlienBulletsFired = 0; // Keeps track of how many bullets the aliens have fired in this round.
+	int barricade1, barricade2, barricade3, barricade4 = 1; // Keeps track of health for each barricade.
 	// Barriers:
 	Barrier barrierTop;
 	Barrier barrierBottom;
@@ -130,13 +134,32 @@ private:
 	// Colour of Text:
 	SDL_Color* white;
 	// TTF:
-	SDL_Surface* debugSurface;
+	
 	SDL_Surface* score;
 	SDL_Texture* scoreImage;
 	SDL_Texture* scoreNumb;
 	SDL_Texture* lastRoundScore;
 	SDL_Texture* waveNumb;
-	SDL_Texture* playerXPos;
+	// Insight/Debug Mode Stats
+	SDL_Surface* debugSurface;
+
+	SDL_Texture* playerXPosTexture;
+	SDL_Texture* alienYPosTexture;
+	SDL_Texture* totalAliensAliveTexture;
+	SDL_Texture* squidsAliveTexture;
+	SDL_Texture* crabsAliveTexture;
+	SDL_Texture* octopusesAliveTexture;
+	SDL_Texture* UFOsAliveTexture;
+	SDL_Texture* alienMovementSpeedTexture;
+	SDL_Texture* alienFireSpeedTexture;
+	SDL_Texture* playerShotTexture;
+	SDL_Texture* CurrentWavePlayeTimeTexture;
+	SDL_Texture* bulletsFiredTexture;
+	SDL_Texture* alienBulletsFiredTexture;
+	SDL_Texture* barricadeHealthTexture1;
+	SDL_Texture* barricadeHealthTexture2;
+	SDL_Texture* barricadeHealthTexture3;
+	SDL_Texture* barricadeHealthTexture4;
 	
 public:
 	// Constructors:
