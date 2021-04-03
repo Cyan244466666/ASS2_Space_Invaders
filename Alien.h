@@ -10,6 +10,7 @@ enum alienType
 	Crab,
 	Octopus
 };
+
 // This class contains an individual alien. This includes 
 // the UFO:
 class Alien : public GameObject

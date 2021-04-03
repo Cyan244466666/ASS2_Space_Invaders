@@ -77,6 +77,14 @@ Game::Game()
 	player_lives = nullptr;
 	barricadeImage = nullptr;
 	
+	//TTF:
+	font = nullptr;
+	white = nullptr;
+	score = nullptr;
+	scoreImage = nullptr;
+	scoreNumb = nullptr;
+	lastRoundScore = nullptr;
+	waveNumb = nullptr;
 
 }
 // Destructor
@@ -209,18 +217,39 @@ void Game::MenuUpdateGame()
 {
 	Mix_VolumeMusic(1);
 	modeDelay += (1.0f * 0.6f);
-	if (gameMode > 1)
+	if (gameMode > 2)
 	{
 		gameMode = 0;
 	}
 
 	if (modeDelay > 20.0f && modePress)
 	{
-		
 		gameMode++;
 		modeDelay = 0;
 	}
 	modePress = false;
+
+	// Handle HighScore and Current Score
+	if (!m_gameWon)
+	{
+		if (m_lastScore < player.GetScore())
+		{
+			m_lastScore = player.GetScore();
+		}
+		player.SetScore(0);
+		// If player loses, they go back to wave 0.
+		m_CurrentWave = 0;
+	}
+	else
+	{
+		// If player wins, they go move up a wave.
+		if (m_lastScore < player.GetScore())
+		{
+			m_lastScore = player.GetScore();
+		}
+	}
+	// If players current high score is less than last round's score, set high score:
+	
 }
 void Game::MenuGenerateOutput()
 {
@@ -242,7 +271,6 @@ void Game::MenuGenerateOutput()
 
 	// Load the Ship's image:
 	SDL_Texture* shipImage = IMG_LoadTexture(m_Renderer, "images/shipArt_2.png");
-	/*SDL_QueryTexture(titleImage, nullptr, nullptr, &ship.x, &ship.h);*/
 	SDL_RenderCopy(m_Renderer, shipImage, nullptr, &ship);
 	// Release Memory:
 	SDL_DestroyTexture(shipImage);
@@ -283,7 +311,7 @@ void Game::MenuGenerateOutput()
 	};
 	if (gameMode == 0)
 	{
-		SDL_Texture* default_mode = IMG_LoadTexture(m_Renderer, "images/default_mode.png");
+		default_mode = IMG_LoadTexture(m_Renderer, "images/default_mode.png");
 		SDL_RenderCopy(m_Renderer, default_mode, nullptr, &mode);
 		// Release Memory:
 		SDL_DestroyTexture(default_mode);
@@ -291,10 +319,17 @@ void Game::MenuGenerateOutput()
 	else if (gameMode == 1)
 	{
 
-		SDL_Texture* default_mode = IMG_LoadTexture(m_Renderer, "images/arcade_mode.png");
+		arcade_mode = IMG_LoadTexture(m_Renderer, "images/arcade_mode.png");
 		SDL_RenderCopy(m_Renderer, default_mode, nullptr, &mode);
 		// Release Memory:
-		SDL_DestroyTexture(default_mode);
+		SDL_DestroyTexture(arcade_mode);
+	}
+	else if (gameMode == 2)
+	{
+		insight_mode = IMG_LoadTexture(m_Renderer, "images/insight_mode.png");
+		SDL_RenderCopy(m_Renderer, insight_mode, nullptr, &mode);
+		// Release Memory:
+		SDL_DestroyTexture(insight_mode);
 	}
 	// Load the Game Mode's image:
 	
@@ -372,6 +407,7 @@ void Game::Initialise()
 		Mix_Volume(5, 6);
 		Mix_Volume(6, 10);
 		Mix_Volume(6, 20);
+		Mix_VolumeChunk(wave_complete, 50);
 
 		// Free Music Memory:
 		/*Mix_FreeMusic(backgroundMusic);*/
@@ -446,13 +482,20 @@ void Game::Initialise()
 	for (int i = 0; i < 4; i++)
 	{
 		auto* barricade = new Barricade();
-		Vector2 barricadePos{ 110 + (i * 230), 520 };
+		Vector2 barricadePos{ 110.0f + (i * 230.0f), 520.0f };
 		Vector2 barricadeScale{ 90, 70 };
 		barricade->SetPosition(barricadePos);
 		barricade->SetScale(barricadeScale);
 		barricadeVector.push_back(barricade);
 	}
 
+	/// Update wave numb
+	if (m_gameWon)
+	{
+		m_gameWon = false;
+		m_CurrentWave++;
+	}
+	
 }
 // Helper Functions:
 void Game::ProcessInput()
@@ -561,11 +604,12 @@ void Game::UpdateGame()
 		{
 			aliensAlive += 1;
 		}
-		if (alien->GetPosition().y > 610)
+		if (alien->GetPosition().y > 630)
 		{
 			Mix_PlayChannel(7, gameover, 0);
 			m_IsRunning = false;
 			m_InMenu = true;
+			m_gameWon = false;
 		}
 	}
 	// End game if there are no aliens:
@@ -732,14 +776,23 @@ void Game::UpdateGame()
 				// Play SFX:
 				if (alienVector[i]->GetAlienType() == Squid)
 				{
+					int updatePlayerScore = player.GetScore();
+					updatePlayerScore += alienVector[i]->GetPointValue();
+					player.SetScore(updatePlayerScore);
 					Mix_PlayChannel(2, squid_death, 0);
 				}
 				if (alienVector[i]->GetAlienType() == Crab)
 				{
+					int updatePlayerScore = player.GetScore();
+					updatePlayerScore += alienVector[i]->GetPointValue();
+					player.SetScore(updatePlayerScore);
 					Mix_PlayChannel(2, crab_death, 0);
 				}
 				if (alienVector[i]->GetAlienType() == Octopus)
 				{
+					int updatePlayerScore = player.GetScore();
+					updatePlayerScore += alienVector[i]->GetPointValue();
+					player.SetScore(updatePlayerScore);
 					Mix_PlayChannel(2, octopus_death, 0);
 				}
 				
@@ -907,6 +960,7 @@ void Game::UpdateGame()
 		Mix_PlayChannel(6, gameover, 0);
 		m_IsRunning = false;
 		m_InMenu = true;
+		m_gameWon = false;
 	}
 	// This code checks if the player is dead, if yes they respawn.
 	if (activateRespawnTimer)
@@ -987,6 +1041,26 @@ void Game::UpdateGame()
 		{
 			if (UFOVector[i]->GetStatus() == Dead)
 			{
+				// Give player points, randomly either 50, 100, or 150:
+				int randNumb = (rand() % 3) + 1;
+				if (randNumb == 1)
+				{
+					int updatePlayerScore = player.GetScore();
+					updatePlayerScore += 50;
+					player.SetScore(updatePlayerScore);
+				}
+				else if (randNumb == 2)
+				{
+					int updatePlayerScore = player.GetScore();
+					updatePlayerScore += 100;
+					player.SetScore(updatePlayerScore);
+				}
+				else
+				{
+					int updatePlayerScore = player.GetScore();
+					updatePlayerScore += 150;
+					player.SetScore(updatePlayerScore);
+				}
 				// Delete the Barricade:
 				std::vector<Alien*>::iterator it;
 				it = UFOVector.begin() + i;
@@ -1010,7 +1084,7 @@ void Game::UpdateGame()
 	}
 
 	/// Collision Check for Barricades:
-	barrierHitDelay += (1 * 0.6);
+	barrierHitDelay += (1 * 0.6f);
 	// Check collision against alien bullets:
 	// Delete barricades if game loop ends:
 	if (!m_IsRunning)
@@ -1025,7 +1099,7 @@ void Game::UpdateGame()
 		}
 	}
 
-	for (int i = 0; i < alienBulletVector.size(); i++)
+	for (int i = 0; i < (int)alienBulletVector.size(); i++)
 	{
 		for (auto* barricade : barricadeVector)
 		{
@@ -1373,7 +1447,7 @@ void Game::GenerateOutput()
 	//------------------------------------------
 	/// Step 7: Render UI:
 	// Render ArcadeMode Joystick
-	if (gameMode == 1 || gameMode == 2)
+	if (gameMode == 1)
 	{
 		SDL_Rect Joystick{
 				200,
@@ -1430,29 +1504,6 @@ void Game::GenerateOutput()
 	SDL_DestroyTexture(BackImage);
 
 	//------------------------------------------
-	/// Display Round over
-	/*roundOverDelay += (1 * 0.2);
-	if (roundOver)
-	{
-		SDL_Rect roundOver{
-			   0,
-			   760,
-			   1024,
-			   60
-		};
-		round_over = IMG_LoadTexture(m_Renderer, "images/round_over.png");
-		SDL_QueryTexture(round_over, nullptr, nullptr, &roundOver.w, &roundOver.h);
-		SDL_RenderCopy(m_Renderer, round_over, nullptr, &roundOver);
-		SDL_DestroyTexture(round_over);
-		if (roundOverDelay > 40)
-		{
-			roundOverDelay = 0;
-			m_IsRunning = false;
-			m_InMenu = true;
-		}
-		
-	}*/
-
 	/// Display player lives:
 	SDL_Rect playerLivesRect{
 			   800,
@@ -1516,7 +1567,107 @@ void Game::GenerateOutput()
 		SDL_RenderCopy(m_Renderer, barricadeImage, nullptr, &barricadeRect);
 		SDL_DestroyTexture(barricadeImage);
 	}
-	
+
+	/// Render player's score:
+	// Initialise font:
+	font = TTF_OpenFont("font/font.ttf", 20);
+	if (font == NULL)
+	{
+		SDL_Log("Unable to initialise SDL_TTF Font: %s", SDL_GetError());
+	}
+	// Set Colour:
+	SDL_Color white{ 255, 255, 255, 255 };
+	SDL_Color green{ 0, 248, 0, 255 };
+
+
+	// Setup Surface:
+	score = TTF_RenderText_Solid(font, "SCORE: ", white);
+	// Setup Texture:
+	scoreImage = SDL_CreateTextureFromSurface(m_Renderer, score);
+	SDL_FreeSurface(score);
+
+	// Set up score number surface:
+	std::string playerScoreNumb = std::to_string(player.GetScore());
+	score = TTF_RenderText_Solid(font, playerScoreNumb.c_str(), green);
+	// Set up score number texture:
+	scoreNumb = SDL_CreateTextureFromSurface(m_Renderer, score);
+	SDL_FreeSurface(score);
+
+	// Set up lastRoundScore Surface:
+	std::string lastRoundScoreStr = "HIGH SCORE:   " + std::to_string(m_lastScore);
+	score = TTF_RenderText_Solid(font, lastRoundScoreStr.c_str(), white);
+	// Set up score number texture:
+	lastRoundScore = SDL_CreateTextureFromSurface(m_Renderer, score);
+	SDL_FreeSurface(score);
+
+	// Set up currentWave Surface:
+	std::string currentWaveStr = "CURRENT WAVE:    " + std::to_string(m_CurrentWave);
+	score = TTF_RenderText_Solid(font, currentWaveStr.c_str(), white);
+	// Set up currentWave texture:
+	waveNumb = SDL_CreateTextureFromSurface(m_Renderer, score);
+	SDL_FreeSurface(score);
+
+
+	// Create Rect for score letters:
+	SDL_Rect scoreRect{
+		30,
+		15,
+		85,
+		25
+	};
+
+	// Create Rect for score numbers:
+	SDL_Rect scoreNumbRect{
+		150,
+		15,
+		40,
+		25
+	};
+
+	// Create Rect for Last Round Score:
+	SDL_Rect lastRoundScoreRect{
+		260,
+		15,
+		190,
+		25
+	};
+
+	// Create Rect for currentWave:
+	SDL_Rect currentWaveRect{
+		500,
+		15,
+		190,
+		25
+	};
+
+	// Render:
+	// Score text:
+	SDL_RenderCopy(m_Renderer, scoreImage, NULL, &scoreRect);
+	// Score Number
+	SDL_QueryTexture(scoreNumb, nullptr, nullptr, &scoreNumbRect.w, &scoreNumbRect.h);
+	SDL_RenderCopy(m_Renderer, scoreNumb, NULL, &scoreNumbRect);
+	// Last Round Score
+	SDL_RenderCopy(m_Renderer, lastRoundScore, NULL, &lastRoundScoreRect);
+	SDL_QueryTexture(lastRoundScore, nullptr, nullptr, &lastRoundScoreRect.w, &lastRoundScoreRect.h);
+	// Current Wave Numb:
+	SDL_RenderCopy(m_Renderer, waveNumb, NULL, &currentWaveRect);
+	SDL_QueryTexture(waveNumb, nullptr, nullptr, &currentWaveRect.w, &currentWaveRect.h);
+
+	// Close Font after use:
+	TTF_CloseFont(font);
+	// Destroy Texture:
+	SDL_DestroyTexture(scoreImage);
+	SDL_DestroyTexture(scoreNumb);
+	SDL_DestroyTexture(lastRoundScore);
+	SDL_DestroyTexture(waveNumb);
+
+
+	/// Display Insight Mode content:
+	// Initialise font:
+	font = TTF_OpenFont("font/font.ttf", 20);
+
+
+
 	/// Final Step: Render all changes:
 	// Present all Render changes to the window:
 	SDL_RenderPresent(m_Renderer);

@@ -114,7 +114,10 @@ private:
 	SDL_Texture* player_lives;
 	SDL_Texture* barricadeImage;
 	
+	// Score Handling:
 	bool m_gameWon = false; // Checks if player won the round.
+	int m_lastScore = 0; // Keeps track of player's last round score.
+	int m_CurrentWave = 0; //  Keeps track of player's current wave.
 
 	// Barriers:
 	Barrier barrierTop;
@@ -122,7 +125,18 @@ private:
 	Barrier barrierRight;
 	Barrier barrierLeft;
 	
-
+	// Font:
+	TTF_Font* font;
+	// Colour of Text:
+	SDL_Color* white;
+	// TTF:
+	SDL_Surface* debugSurface;
+	SDL_Surface* score;
+	SDL_Texture* scoreImage;
+	SDL_Texture* scoreNumb;
+	SDL_Texture* lastRoundScore;
+	SDL_Texture* waveNumb;
+	SDL_Texture* playerXPos;
 	
 public:
 	// Constructors:

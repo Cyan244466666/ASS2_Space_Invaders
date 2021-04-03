@@ -16,6 +16,7 @@
 		SetStatus(Alive);
 		m_NumberOfLives = 3;
 		m_HasShot = false;
+		m_Score = 0;
 	}
 
 	// Destructor:
@@ -24,12 +25,12 @@
 	// Getters:
 	int Ship::GetNumberOfLives() { return m_NumberOfLives; }
 	bool Ship::GetHasShot() { return m_HasShot; }
-	//int Ship::GetScore() { return m_Score; }
+	int Ship::GetScore() { return m_Score; }
 
 	// Setters:
 	void Ship::SetNumberOfLives(int _numberOfLives) { m_NumberOfLives = _numberOfLives; }
 	void Ship::SetHasShot(bool _hasShot) { m_HasShot = _hasShot; }
-	/*void Ship::SetScore(int _score) { m_Score = _score; }*/
+	void Ship::SetScore(int _score) { m_Score = _score; }
 
 	
 
