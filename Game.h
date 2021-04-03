@@ -1,13 +1,14 @@
 #pragma once
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_mixer.h>
-#include <SDL_ttf.h>
+#include "SDL/SDL/include/SDL.h"
+#include "SDL/SDL2_image-2.0.5/include/SDL_image.h"
+#include "SDL//SDL2_mixer-devel-2.0.4-VC/SDL2_mixer-2.0.4/include/SDL_mixer.h"
+#include "SDL/SDL2_ttf-devel-2.0.15-VC/SDL2_ttf-2.0.15/include/SDL_ttf.h"
 #include <vector>
 #include <string>
 #include "GameObject.h"
 #include "Ship.h"
 #include "Barrier.h"
+#include "Barricade.h"
 #include "Alien.h"
 #include "Bullet.h"
 
@@ -30,6 +31,8 @@ private:
 	std::vector <Bullet*> bulletVector;
 	// This vector hold all alien bullets spawned in-game:
 	std::vector <Bullet*> alienBulletVector;
+	// This vector hold all barricades spawned in-game:
+	std::vector <Barricade*> barricadeVector;
 	// This keeps track if the round is over or not:
 	bool roundOver = false;
 
@@ -44,6 +47,7 @@ private:
 	int deathAnimationCounter = 0;
 	float modeDelay = 0.0f;
 	float roundOverDelay = 0.0f;
+	float barrierHitDelay = 0.0f;
 	double player1Delay = 0.0;
 	bool modePress = false;
 	int playerScore = 0; // Keeps track of the player's score:
@@ -72,6 +76,7 @@ private:
 	Mix_Chunk* alien_move_speed2;
 	Mix_Chunk* alien_move_speed3;
 	Mix_Chunk* alien_move_speed4;
+	Mix_Chunk* gameover;
 
 
 	// This bool is used to tell the program that the alien has already moved down a row and doesn't
@@ -107,15 +112,9 @@ private:
 	SDL_Texture* round_over;
 	SDL_Texture* player1;
 	SDL_Texture* player_lives;
-	// Variables to hold text:
+	SDL_Texture* barricadeImage;
 	
-	
-	
-	std::string currentScore;
-
-	
-
-
+	bool m_gameWon = false; // Checks if player won the round.
 
 	// Barriers:
 	Barrier barrierTop;

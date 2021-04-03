@@ -63,6 +63,7 @@ Game::Game()
 	alien_move_speed2 = nullptr;
 	alien_move_speed3 = nullptr;
 	alien_move_speed4 = nullptr;
+	gameover = nullptr;
 	JoystickImage = nullptr;
 	ButtomImage = nullptr;
 	AlienBulletImage = nullptr;
@@ -74,6 +75,7 @@ Game::Game()
 	round_over = nullptr;
 	player1 = nullptr;
 	player_lives = nullptr;
+	barricadeImage = nullptr;
 	
 
 }
@@ -205,6 +207,7 @@ void Game::MenuProcessInput()
 }
 void Game::MenuUpdateGame()
 {
+	Mix_VolumeMusic(1);
 	modeDelay += (1.0f * 0.6f);
 	if (gameMode > 1)
 	{
@@ -346,6 +349,8 @@ void Game::Initialise()
 		alien_move_speed2 = Mix_LoadWAV("sound_effects/alien_move2.wav");
 		alien_move_speed3 = Mix_LoadWAV("sound_effects/alien_move3.wav");
 		alien_move_speed4 = Mix_LoadWAV("sound_effects/alien_move4.wav");
+		gameover = Mix_LoadWAV("sound_effects/gameover.wav");
+		
 
 		if(TTF_Init()==-1)
 		{
@@ -355,13 +360,18 @@ void Game::Initialise()
 
 		// allocate 16 mixing channels
 		Mix_AllocateChannels(16);
-
-		Mix_PlayMusic(backgroundMusic, -1);
-		// Set Volume
+		if (m_IsRunning)
+		{
+			Mix_PlayMusic(backgroundMusic, -1);
+		}
+		// Set Volume for channels:
 		Mix_VolumeMusic(10);
 		Mix_Volume(-1, 15);
 		Mix_Volume(2, 5);
 		Mix_Volume(4, 30);
+		Mix_Volume(5, 6);
+		Mix_Volume(6, 10);
+		Mix_Volume(6, 20);
 
 		// Free Music Memory:
 		/*Mix_FreeMusic(backgroundMusic);*/
@@ -429,6 +439,18 @@ void Game::Initialise()
 				alien->SetAlienType(Octopus);
 			}
 		}
+	}
+
+
+	/// Step 4: Initialise the Barricades start position:
+	for (int i = 0; i < 4; i++)
+	{
+		auto* barricade = new Barricade();
+		Vector2 barricadePos{ 110 + (i * 230), 520 };
+		Vector2 barricadeScale{ 90, 70 };
+		barricade->SetPosition(barricadePos);
+		barricade->SetScale(barricadeScale);
+		barricadeVector.push_back(barricade);
 	}
 
 }
@@ -539,8 +561,9 @@ void Game::UpdateGame()
 		{
 			aliensAlive += 1;
 		}
-		if (alien->GetPosition().y > 650)
+		if (alien->GetPosition().y > 610)
 		{
+			Mix_PlayChannel(7, gameover, 0);
 			m_IsRunning = false;
 			m_InMenu = true;
 		}
@@ -548,7 +571,10 @@ void Game::UpdateGame()
 	// End game if there are no aliens:
 	if(aliensAlive == 0)
 	{
-		roundOver = true;
+		m_IsRunning = false;
+		Mix_PlayChannel(6, wave_complete, 0);
+		m_InMenu = true;
+		m_gameWon = true;
 	}
 	// Calculate Movement Speed:
 	if(aliensAlive == 1) { movementSpeed = 17.0f;}
@@ -616,7 +642,7 @@ void Game::UpdateGame()
 		{
 			if (movementSpeed < 5.0f && movementSpeed > 0.0f)
 			{
-				Mix_PlayChannel(4, alien_move_speed1, 0);
+				
 			}
 			if (movementSpeed < 7.0f && movementSpeed > 5.0f)
 			{
@@ -858,11 +884,27 @@ void Game::UpdateGame()
 		}
 	}
 
+	for (auto* bullet : bulletVector)
+	{
+		for (int i = 0; i < (int)bulletVector.size(); i++)
+		{
+			// Delete Bullet (if it hit):
+			if (bulletVector[i]->GetStatus() == Dead)
+			{
+				// Delete the Bullet:
+				std::vector<Bullet*>::iterator it;
+				it = bulletVector.begin() + i;
+				bulletVector.erase(it);
+			}
+		}
+	}
+
 	//------------------------------------------
 	/// Step 9: Respawn Player/Check if GameOver:
 	// This code checks if the player has lost all 3 lives - if yes - the game ends.
 	if (player.GetNumberOfLives() == 0)
 	{
+		Mix_PlayChannel(6, gameover, 0);
 		m_IsRunning = false;
 		m_InMenu = true;
 	}
@@ -937,7 +979,108 @@ void Game::UpdateGame()
 			UFO->SetStatus(Dead);
 		}
 	}
+	// Delete UFO if it's dead:
+	for (auto* UFO : UFOVector)
+	{
+	
+		for (int i = 0; i < (int)UFOVector.size(); i++)
+		{
+			if (UFOVector[i]->GetStatus() == Dead)
+			{
+				// Delete the Barricade:
+				std::vector<Alien*>::iterator it;
+				it = UFOVector.begin() + i;
+				UFOVector.erase(it);
+			}
+		}
+		
+	}
+	// If game loop ends, delete UFO's:
+	// If barricade health becomes 0, then it's dead
+	if (!m_IsRunning)
+	{
+		for (int i = 0; i < (int)UFOVector.size(); i++)
+		{
+			// Delete the Barricade:
+			std::vector<Alien*>::iterator it;
+			it = UFOVector.begin() + i;
+			UFOVector.erase(it);
+				
+		}	
+	}
 
+	/// Collision Check for Barricades:
+	barrierHitDelay += (1 * 0.6);
+	// Check collision against alien bullets:
+	// Delete barricades if game loop ends:
+	if (!m_IsRunning)
+	{
+		for (int i = 0; i < (int)barricadeVector.size(); i++)
+		{
+			// Delete the Barricade:
+			std::vector<Barricade*>::iterator it;
+			it = barricadeVector.begin() + i;
+			barricadeVector.erase(it);
+
+		}
+	}
+
+	for (int i = 0; i < alienBulletVector.size(); i++)
+	{
+		for (auto* barricade : barricadeVector)
+		{
+			if (barricade->BulletCollision(alienBulletVector[i]->GetPosition(), alienBulletVector[i]->GetScale()))
+			{
+				Mix_PlayChannel(5, barrier_hit, 0);
+				int changeHealth = barricade->GetHealth();
+				changeHealth -= 7;
+				barricade->SetHealth(changeHealth);
+				alienBulletVector[i]->SetStatus(Dead);
+				barrierHitDelay = 0;
+				}
+				else
+				{
+					continue;
+				}
+			}
+		}
+
+		// Check collision against player bullets:
+		for (auto* bullet : bulletVector)
+		{
+			for (auto* barricade : barricadeVector)
+			{
+				if (barricade->BulletCollision(bullet->GetPosition(), bullet->GetScale()))
+				{
+					Mix_PlayChannel(5, barrier_hit, 0);
+					int changeHealth = barricade->GetHealth();
+					changeHealth -= 7;
+					barricade->SetHealth(changeHealth);
+					bullet->SetStatus(Dead);
+					barrierHitDelay = 0;
+				}
+				else
+				{
+					continue;
+				}
+			}
+		}
+
+		// If barricade health becomes 0, then it's dead
+		for (auto* barricade : barricadeVector)
+		{
+			for (int i = 0; i < (int)barricadeVector.size(); i++)
+			{
+				if (barricadeVector[i]->GetHealth() <= 0)
+				{
+					Mix_PlayChannel(3, barrier_destroyed, 0);
+					// Delete the Barricade:
+					std::vector<Barricade*>::iterator it;
+					it = barricadeVector.begin() + i;
+					barricadeVector.erase(it);
+				}
+			}
+		}
 
 }
 void Game::GenerateOutput()
@@ -1332,6 +1475,48 @@ void Game::GenerateOutput()
 	SDL_RenderCopy(m_Renderer, player_lives, nullptr, &playerLivesRect);
 	SDL_DestroyTexture(player_lives);
 
+
+
+	/// Render Barricades:
+	// Set Draw Colour to bright green:
+	SDL_SetRenderDrawColor(m_Renderer, 0, 252, 0, 255);
+	for (auto* barricade : barricadeVector)
+	{
+		if (barricade->GetStatus() == Dead)
+		{
+			continue;
+		}
+		SDL_Rect barricadeRect{
+			(int)barricade->GetPosition().x,
+			(int)barricade->GetPosition().y,
+			90,
+			70
+		};
+		if (barricade->GetHealth() > 60)
+		{
+			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_1.png");
+		}
+		else if (barricade->GetHealth() > 45 && barricade->GetHealth() < 61)
+		{
+			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_2.png");
+		}
+		else if (barricade->GetHealth() > 20 && barricade->GetHealth() < 46)
+		{
+			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_3.png");
+		}
+		else if (barricade->GetHealth() > 10 && barricade->GetHealth() < 47)
+		{
+			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_4.png");
+		}
+		else
+		{
+			barricadeImage = IMG_LoadTexture(m_Renderer, "images/barricade_5.png");
+		}
+		
+		SDL_RenderCopy(m_Renderer, barricadeImage, nullptr, &barricadeRect);
+		SDL_DestroyTexture(barricadeImage);
+	}
+	
 	/// Final Step: Render all changes:
 	// Present all Render changes to the window:
 	SDL_RenderPresent(m_Renderer);
@@ -1343,6 +1528,10 @@ void Game::Shutdown()
 	for (auto &alien : alienVector)
 	{
 		delete alien;
+	}
+	for (auto& barricade : barricadeVector)
+	{
+		delete barricade;
 	}
 
 	SDL_DestroyWindow(m_Window); // Destroys Window

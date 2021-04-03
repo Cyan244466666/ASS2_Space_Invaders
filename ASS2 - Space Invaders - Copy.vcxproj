@@ -72,13 +72,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\include;E:\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\include;E:\SDL\SDL2_image-2.0.5\include;E:\SDL\SDL\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\lib\x86;E:\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\lib\x86;E:\SDL\SDL2_image-2.0.5\lib\x86;E:\SDL\SDL\SDL\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\include;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\include;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_image-2.0.5\include;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL\include;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\lib\x86;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\lib\x86;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_image-2.0.5\lib\x86;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\include;E:\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\include;E:\SDL\SDL2_image-2.0.5\include;E:\SDL\SDL\SDL\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\lib\x86;E:\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\lib\x86;E:\SDL\SDL2_image-2.0.5\lib\x86;E:\SDL\SDL\SDL\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\include;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\include;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_image-2.0.5\include;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL\include;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_ttf-devel-2.0.15-VC\SDL2_ttf-2.0.15\lib\x86;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_mixer-devel-2.0.4-VC\SDL2_mixer-2.0.4\lib\x86;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL2_image-2.0.5\lib\x86;E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -152,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Alien.h" />
+    <ClInclude Include="Barricade.h" />
     <ClInclude Include="Barrier.h" />
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="Game.h" />
