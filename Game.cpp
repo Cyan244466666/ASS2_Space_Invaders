@@ -567,6 +567,7 @@ void Game::ProcessInput()
 		{
 		case SDL_QUIT:
 			m_IsRunning = false;
+			m_InMenu = true;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			player.SetHasShot(true);
@@ -582,6 +583,7 @@ void Game::ProcessInput()
 	if (state[SDL_SCANCODE_ESCAPE])
 	{
 		m_IsRunning = false;
+		m_InMenu = true;
 	}
 	player.SetDirection(0);
 	int newDirection = 0;
