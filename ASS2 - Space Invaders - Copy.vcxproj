@@ -157,7 +157,16 @@
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Ship.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ASS2 - Space Invaders - Copy.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\Crab_2.png" />
+    <Image Include="images\exe_Icon.ico" />
+    <Image Include="images\exe_Icon.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
