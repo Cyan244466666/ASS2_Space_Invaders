@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DEFECTS>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\SDL\SDL\include\</FILEPATH>
+      <FILENAME>SDL_rect.h</FILENAME>
+      <LINE>102</LINE>
+      <COLUMN>28</COLUMN>
+    </SFA>
+    <DEFECTCODE>26812</DEFECTCODE>
+    <DESCRIPTION>The enum type 'SDL_bool' is unscoped. Prefer 'enum class' over 'enum' (Enum.3).</DESCRIPTION>
+    <FUNCTION>SDL_PointInRect</FUNCTION>
+    <DECORATED>SDL_PointInRect</DECORATED>
+    <FUNCLINE>99</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>E:\Visual Studio 2019\repos\ASS2 - Space Invaders - Copy\</FILEPATH>
+      <FILENAME>Alien.h</FILENAME>
+      <LINE>45</LINE>
+      <COLUMN>9</COLUMN>
+    </SFA>
+    <DEFECTCODE>26812</DEFECTCODE>
+    <DESCRIPTION>The enum type 'alienType' is unscoped. Prefer 'enum class' over 'enum' (Enum.3).</DESCRIPTION>
+    <FUNCTION>Alien::{ctor}</FUNCTION>
+    <DECORATED>??0Alien@@QAE@XZ</DECORATED>
+    <FUNCLINE>33</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+</DEFECTS>
